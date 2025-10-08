@@ -1,0 +1,117 @@
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Res,
+  UnauthorizedException,
+  Req,
+  HttpCode,
+} from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { SignUpDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
+import { JwtService } from '@nestjs/jwt';
+import { Response, Request } from 'express';
+import { setCookie } from '../../common/utils/setCookie';
+
+@Controller('auth')
+export class AuthController {
+  constructor(
+    private authService: AuthService,
+    private readonly jwtService: JwtService
+  ) {}
+
+  @Get('health')
+  routeCheck(): any {
+    return this.authService.healthCheck();
+  }
+
+  @Post('signup')
+  async signup(
+    @Body() signupDto: SignUpDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const result = await this.authService.signup(signupDto);
+    if (!result.userData) {
+      throw new UnauthorizedException('User creation failed');
+    }
+
+    const payload = { sub: result.userData.id, email: result.userData.email };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '5m' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    setCookie(res as Response, 'refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    return { ...result, accessToken };
+  }
+
+  @Post('login')
+  @HttpCode(200)
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const result = await this.authService.login(loginDto);
+    if (!result?.user) throw new UnauthorizedException('Invalid credentials');
+
+    const payload = { sub: result.user.id, email: result.user.email };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '5m' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    setCookie(res as Response, 'refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    return { ...result, accessToken };
+  }
+
+  @Post('refresh')
+  @HttpCode(200)
+  refresh(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
+    const refreshToken = this.authService.refresh(req);
+    if (!refreshToken) throw new UnauthorizedException('No refresh token');
+
+    let payload: { sub: string; email: string };
+    try {
+      payload = this.jwtService.verify(refreshToken);
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const newAccess = this.jwtService.sign(
+      { sub: payload.sub, email: payload.email },
+      { expiresIn: '5m' }
+    );
+    const newRefresh = this.jwtService.sign(
+      { sub: payload.sub, email: payload.email },
+      { expiresIn: '7d' }
+    );
+
+    setCookie(res as Response, 'refresh_token', newRefresh, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    return { accessToken: newAccess };
+  }
+
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('refresh_token', { path: '/' });
+    return { message: 'Logged out' };
+  }
+}
