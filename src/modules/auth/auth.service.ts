@@ -77,7 +77,7 @@ export class AuthService {
       }
 
       return {
-        message: 'Login action executed successfully',
+        message: 'Login successful!',
         user: {
           id: user.id,
           email: user.email,
@@ -89,6 +89,34 @@ export class AuthService {
         throw error;
       }
       throw new Error(`Login failed: ${error.message}`);
+    }
+  }
+
+  async getUserById(userId: number) {
+    try {
+      const user = await this.database.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          birthdate: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(`Failed to get user: ${error.message}`);
     }
   }
 

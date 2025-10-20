@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
   Req,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signup.dto';
@@ -14,6 +15,8 @@ import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { Response, Request } from 'express';
 import { setCookie } from '../../common/utils/setCookie';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -25,6 +28,16 @@ export class AuthController {
   @Get('health')
   routeCheck(): any {
     return this.authService.healthCheck();
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getCurrentUser(@CurrentUser() user: { sub: number; email: string }) {
+    const userData = await this.authService.getUserById(user.sub);
+    return {
+      message: 'User data retrieved successfully',
+      user: userData,
+    };
   }
 
   @Post('signup')
@@ -73,7 +86,11 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
-    return { ...result, accessToken };
+    return {
+      message: result.message,
+      user: result.user,
+      accessToken,
+    };
   }
 
   @Post('refresh')

@@ -72,6 +72,7 @@ docker run -p 3000:3000 \
 
 - `POST /api/auth/signup` - Registration
 - `POST /api/auth/login` - Login
+- `GET /api/auth/me` - Get current user info (requires JWT token)
 - `POST /api/auth/refresh` - Refresh token
 - `POST /api/auth/logout` - Logout
 

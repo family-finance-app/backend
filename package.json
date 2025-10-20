@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Monolithic backend for Family Finance app",
   "main": "dist/main.js",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
@@ -20,17 +23,19 @@
     "@prisma/client": "^5.22.0",
     "@types/cookie-parser": "^1.4.9",
     "argon2": "^0.44.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
+    "dotenv": "^16.3.1",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1",
-    "dotenv": "^16.3.1"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^20.0.0",
     "prisma": "^5.22.0",
-    "typescript": "^5.0.0",
     "ts-node": "^10.9.0",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.0"
   }
 }
