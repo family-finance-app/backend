@@ -1,4 +1,5 @@
 import { IsString, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { AccountType, CurrencyType } from '@prisma/client';
 
 export class CreateAccountDto {
@@ -11,6 +12,7 @@ export class CreateAccountDto {
   @IsNumber()
   @Min(0)
   @IsOptional()
+  @Type(() => Number)
   balance?: number;
 
   @IsEnum(CurrencyType)

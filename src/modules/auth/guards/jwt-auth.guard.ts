@@ -24,7 +24,7 @@ export class JwtAuthGuard implements CanActivate {
         secret: process.env.JWT_SECRET || 'fallback-secret-key',
       });
       request['user'] = payload;
-    } catch {
+    } catch (error) {
       throw new UnauthorizedException('Invalid or expired token');
     }
     return true;
