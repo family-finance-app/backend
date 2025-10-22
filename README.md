@@ -51,6 +51,8 @@ npm run dev
 
 ### Docker
 
+#### Standalone Docker
+
 ```bash
 # Build image
 docker build -t family-finance-backend .
@@ -60,6 +62,24 @@ docker run -p 3000:3000 \
   -e DATABASE_URL="postgresql://user:pass@host:5432/db" \
   family-finance-backend
 ```
+
+#### Docker Compose
+
+```bash
+# Create shared network (run this once)
+docker network create family-finance-network
+
+# Start backend service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop service
+docker-compose down
+```
+
+**Note:** The backend service requires a PostgreSQL database. Make sure your database is running and accessible at the DATABASE_URL specified in the docker-compose.yml file.
 
 ## API Endpoints
 

@@ -6,6 +6,7 @@ import { CreateFinAccountDataDto } from './dto/create.dto';
 export class AccountsService {
   constructor(private database: DatabaseService) {}
 
+  // create new account, accounts/create endpoint
   async createFinAccount(finAccountData: CreateFinAccountDataDto) {
     try {
       // check if the same account already exists
@@ -59,6 +60,78 @@ export class AccountsService {
         throw error;
       }
       throw new Error(`Failed to create account: ${error.message}`);
+    }
+  }
+
+  // get user accounts by id, accounts/:userId endpoint
+  async getUserAccountsById(userId: number) {
+    try {
+      const userAccounts = await this.database.account.findMany({
+        where: {
+          ownerId: userId,
+        },
+        select: {
+          id: true,
+          name: true,
+          balance: true,
+          currency: true,
+          owner: {
+            select: {
+              email: true,
+            },
+          },
+        },
+      });
+
+      return userAccounts;
+    } catch (error) {
+      throw new Error(`Failed to fetch accounts: ${error.message}`);
+    }
+  }
+
+  // get account by id to verify ownership
+  async getAccountById(accountId: number) {
+    try {
+      if (!accountId || isNaN(accountId)) {
+        return null;
+      }
+
+      const account = await this.database.account.findUnique({
+        where: {
+          id: accountId,
+        },
+        select: {
+          id: true,
+          name: true,
+          ownerId: true,
+          createdBy: true,
+        },
+      });
+
+      return account;
+    } catch (error) {
+      console.error('Error fetching account:', error);
+      return null;
+    }
+  }
+
+  // delete account by id
+  async deleteAccount(accountId: number) {
+    try {
+      await this.database.account.delete({
+        where: {
+          id: accountId,
+        },
+      });
+
+      return {
+        message: 'Account has been successfully deleted',
+        accountId,
+        status: 'success',
+        statusCode: 200,
+      };
+    } catch (error) {
+      throw new Error(`Failed to delete account: ${error.message}`);
     }
   }
 }
