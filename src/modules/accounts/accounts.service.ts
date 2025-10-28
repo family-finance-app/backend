@@ -63,7 +63,7 @@ export class AccountsService {
     }
   }
 
-  // get user accounts by id, accounts/:userId endpoint
+  // get user accounts by id, accounts/my
   async getUserAccountsById(userId: number) {
     try {
       const userAccounts = await this.database.account.findMany({
@@ -73,6 +73,7 @@ export class AccountsService {
         select: {
           id: true,
           name: true,
+          type: true,
           balance: true,
           currency: true,
           owner: {

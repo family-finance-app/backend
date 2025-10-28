@@ -30,9 +30,6 @@ export class AccountsController {
     @Body() createAccountDto: CreateAccountDto,
     @CurrentUser() user: { sub: number; email: string }
   ) {
-    console.log('User from token:', user); // Для отладки
-    console.log('Body:', createAccountDto); // Для отладки
-
     const accountData = {
       ...createAccountDto,
       ownerId: user.sub,

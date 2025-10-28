@@ -51,7 +51,7 @@ export class AuthController {
     }
 
     const payload = { sub: result.userData.id, email: result.userData.email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '5m' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '7d' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     setCookie(res as Response, 'refresh_token', refreshToken, {
@@ -75,7 +75,7 @@ export class AuthController {
     if (!result?.user) throw new UnauthorizedException('Invalid credentials');
 
     const payload = { sub: result.user.id, email: result.user.email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '5m' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '7d' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     setCookie(res as Response, 'refresh_token', refreshToken, {

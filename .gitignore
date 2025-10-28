@@ -52,7 +52,6 @@ coverage/
 *.tsbuildinfo
 
 # Prisma
-.env.example
 !prisma/schema.prisma
 !prisma/migrations/
 
