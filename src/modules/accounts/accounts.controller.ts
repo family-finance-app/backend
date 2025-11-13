@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Body,
   UseGuards,
@@ -14,6 +15,7 @@ import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UpdateAccountDto } from './dto/update.dto';
 
 @Controller('accounts')
 export class AccountsController {
@@ -57,29 +59,27 @@ export class AccountsController {
     return this.accountsService.getUserAccountsById(userIdNumber);
   }
 
+  @Put(':accountId')
+  @UseGuards(JwtAuthGuard)
+  async updateAccountById(
+    @Body() accountData: UpdateAccountDto,
+    @Param('accountId') accountId: number,
+    @CurrentUser() user: { sub: number; email: string }
+  ) {
+    return this.accountsService.updateAccountById(
+      accountId,
+      user.sub,
+      accountData
+    );
+  }
+
   @Delete(':accountId')
   @UseGuards(JwtAuthGuard)
   @HttpCode(200)
   async deleteAccount(
-    @Param('accountId') accountId: string,
+    @Param('accountId') accountId: number,
     @CurrentUser() user: { sub: number; email: string }
   ) {
-    const accountIdNumber = parseInt(accountId, 10);
-
-    if (isNaN(accountIdNumber)) {
-      throw new NotFoundException('Invalid account ID');
-    }
-
-    const account = await this.accountsService.getAccountById(accountIdNumber);
-
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
-
-    if (account.ownerId !== user.sub) {
-      throw new UnauthorizedException('You can only delete your own accounts');
-    }
-
-    return this.accountsService.deleteAccount(accountIdNumber);
+    return this.accountsService.deleteAccountById(accountId, user.sub);
   }
 }
