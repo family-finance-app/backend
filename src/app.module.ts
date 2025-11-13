@@ -6,6 +6,7 @@ import { AccountsModule } from './modules/accounts/accounts.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { DatabaseModule } from './database/database.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
     AccountsModule,
     TransactionsModule,
     CategoriesModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

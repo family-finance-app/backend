@@ -32,11 +32,13 @@ export class AuthService {
         data: {
           email: signupData.email,
           passwordHash: hashedPassword,
+          terms: signupData.terms,
           role: signupData.role || 'MEMBER',
         },
         select: {
           id: true,
           email: true,
+          terms: true,
           role: true,
           createdAt: true,
         },
@@ -45,7 +47,6 @@ export class AuthService {
       return {
         message: 'New user has been successfully created',
         userData: newUser,
-        userId: newUser.id,
         status: 'success',
         statusCode: 201,
       };
