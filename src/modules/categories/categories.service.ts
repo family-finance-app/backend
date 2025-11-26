@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '../../database/database.service.js';
 
 @Injectable()
 export class CategoriesService {
@@ -24,7 +24,9 @@ export class CategoriesService {
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw new Error(
-        `Failed to fetch categories: ${error.statusCode}, ${error.message}`
+        `Failed to fetch categories: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
     }
   }

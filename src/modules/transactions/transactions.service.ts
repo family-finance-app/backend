@@ -1,8 +1,10 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { TransactionType } from '@prisma/client';
-import { DatabaseService } from '../../database/database.service';
-import { CreateTransactionDto } from './dto/create-tr.dto';
-import { UpdateTransactionDto } from './dto/update-tr.dto';
+import { DatabaseService } from '../../database/database.service.js';
+import { CreateTransactionDto } from './dto/create-tr.dto.js';
+import { UpdateTransactionDto } from './dto/update-tr.dto.js';
+import { CreateTransferDataDto } from './dto/transfer.dto.js';
+import { validateTransfer } from '../../common/utils/validateTransfer.js';
 
 type InternalCreateTransaction = CreateTransactionDto & {
   userId: number;
@@ -11,11 +13,10 @@ type InternalCreateTransaction = CreateTransactionDto & {
 
 @Injectable()
 export class TransactionsService {
+  private readonly logger = new Logger(TransactionsService.name);
   constructor(private database: DatabaseService) {}
 
   async createTransaction(transactionData: InternalCreateTransaction) {
-    console.log(transactionData);
-
     if (!transactionData.userId) {
       throw new BadRequestException('userId is required');
     }
@@ -250,7 +251,104 @@ export class TransactionsService {
       });
       return userTransactions;
     } catch (error) {
-      throw new Error(`Failed to fetch transactions: ${error.message}`);
+      throw new Error(
+        `Failed to fetch transactions: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  }
+
+  async createTransfer(transferData: CreateTransferDataDto, userId: number) {
+    try {
+      validateTransfer(transferData, userId);
+      const created = await this.database.$transaction(async (tx) => {
+        const sourceAccount = await tx.account.findUnique({
+          where: { id: transferData.accountId },
+          select: { id: true, balance: true, ownerId: true },
+        });
+
+        if (!sourceAccount) {
+          this.logger.warn('Source account not found');
+          throw new BadRequestException('Source account not found');
+        }
+
+        if (sourceAccount.ownerId !== userId) {
+          this.logger.warn('User does not have access to this account');
+          throw new BadRequestException(
+            'You do not have permission to transfer from this account'
+          );
+        }
+
+        if (sourceAccount.balance.toNumber() < transferData.amount) {
+          this.logger.warn('Insufficient balance');
+          throw new BadRequestException('Insufficient balance');
+        }
+
+        const destinationAccount = await tx.account.findUnique({
+          where: { id: transferData.accountRecipientId },
+          select: { id: true },
+        });
+
+        if (!destinationAccount) {
+          this.logger.warn('Destination account not found');
+          throw new BadRequestException('Destination account not found');
+        }
+
+        const transfer = await tx.transaction.create({
+          data: {
+            accountId: transferData.accountId,
+            accountRecipentId: transferData.accountRecipientId,
+            userId: userId,
+            groupId: transferData.groupId,
+            categoryId: transferData.categoryId,
+            amount: transferData.amount,
+            currency: transferData.currency,
+            description: transferData.description,
+            date: transferData.date ?? new Date().toISOString(),
+            type: TransactionType.TRANSFER,
+          },
+          select: {
+            id: true,
+            accountId: true,
+            accountRecipentId: true,
+            userId: true,
+            groupId: true,
+            categoryId: true,
+            amount: true,
+            currency: true,
+            description: true,
+            date: true,
+            type: true,
+          },
+        });
+
+        await tx.account.update({
+          where: { id: transferData.accountId },
+          data: { balance: { decrement: transferData.amount } },
+        });
+
+        await tx.account.update({
+          where: { id: transferData.accountRecipientId },
+          data: { balance: { increment: transferData.amount } },
+        });
+
+        return transfer;
+      });
+
+      return {
+        message: 'Transfer has been successfully created',
+        transfer: created,
+        status: 'success',
+        statusCode: 201,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      this.logger.error(
+        'Failed to create transfer',
+        error instanceof Error ? error.stack : String(error)
+      );
+      throw new BadRequestException('Failed to create transfer');
     }
   }
 }
