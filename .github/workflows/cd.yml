@@ -93,9 +93,7 @@ jobs:
     name: Checkmarx KICS
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: |
-      inputs.runKics == true ||
-      github.event_name == 'push'
+    if: inputs.runKics == true
     permissions:
       contents: read
       issues: write
