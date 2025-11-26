@@ -3,12 +3,12 @@ import {
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { SignUpDto } from './dto/signup.dto';
+import { SignUpDto } from './dto/signup.dto.js';
 import * as argon2 from 'argon2';
-import { LoginDto } from './dto/login.dto';
-import { getCookie } from '../../common/utils/parseCookie';
+import { LoginDto } from './dto/login.dto.js';
+import { getCookie } from '../../common/utils/parseCookie.js';
 import { Request } from 'express';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '../../database/database.service.js';
 
 @Injectable()
 export class AuthService {
@@ -50,11 +50,12 @@ export class AuthService {
         status: 'success',
         statusCode: 201,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new Error(`Failed to create user: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to create user: ${message}`);
     }
   }
 
@@ -85,11 +86,12 @@ export class AuthService {
           role: user.role,
         },
       };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new Error(`Login failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Login failed: ${message}`);
     }
   }
 
@@ -113,11 +115,12 @@ export class AuthService {
       }
 
       return user;
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new Error(`Failed to get user: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get user: ${message}`);
     }
   }
 

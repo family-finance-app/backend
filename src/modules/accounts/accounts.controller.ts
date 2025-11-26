@@ -11,11 +11,11 @@ import {
   HttpCode,
   NotFoundException,
 } from '@nestjs/common';
-import { AccountsService } from './accounts.service';
-import { CreateAccountDto } from './dto/create.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UpdateAccountDto } from './dto/update.dto';
+import { AccountsService } from './accounts.service.js';
+import { CreateAccountDto } from './dto/create.dto.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { UpdateAccountDto } from './dto/update.dto.js';
 
 @Controller('accounts')
 export class AccountsController {

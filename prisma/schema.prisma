@@ -1,15 +1,11 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
+
 
 model User {
   id           Int      @id @default(autoincrement())
@@ -76,10 +72,11 @@ model Account {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  owner           User            @relation("AccountOwner", fields: [ownerId], references: [id])
-  creator         User            @relation("AccountCreator", fields: [createdBy], references: [id])
-  transactions    Transaction[]
-  accountsGroups  AccountsGroup[]
+  owner             User            @relation("AccountOwner", fields: [ownerId], references: [id])
+  creator           User            @relation("AccountCreator", fields: [createdBy], references: [id])
+  transactions      Transaction[]   @relation("TransactionSource")
+  incomingTransfers Transaction[]   @relation("TransactionRecipient")
+  accountsGroups    AccountsGroup[]
 
   @@map("accounts")
 
@@ -117,7 +114,8 @@ model AccountsGroup {
 
 model Transaction {
   id          Int      @id @default(autoincrement())
-  accountId   Int      @map("account_id")
+  accountId   Int      @map("account_id") // source account
+  accountRecipentId Int? @map("account_recipient_id") // for transfers only
   userId      Int      @map("user_id")
   groupId     Int?     @map("group_id")
   categoryId  Int?     @map("category_id")
@@ -130,10 +128,11 @@ model Transaction {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id])
-  group    Group?    @relation(fields: [groupId], references: [id])
-  category Category? @relation(fields: [categoryId], references: [id])
+  account              Account   @relation("TransactionSource", fields: [accountId], references: [id], onDelete: Cascade)
+  destinationAccount   Account?  @relation("TransactionRecipient", fields: [accountRecipentId], references: [id], onDelete: Cascade)
+  user                 User      @relation(fields: [userId], references: [id])
+  group                Group?    @relation(fields: [groupId], references: [id])
+  category             Category? @relation(fields: [categoryId], references: [id])
 
   @@map("transactions")
 }

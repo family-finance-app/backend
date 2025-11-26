@@ -3,9 +3,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
     container_name: family-finance-backend
     env_file:
-      - .env
+      - .env.prod
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL_PROD}
     ports:
       - "3000:3000"
     networks:

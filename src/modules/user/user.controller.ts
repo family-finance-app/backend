@@ -12,17 +12,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { JwtService } from '@nestjs/jwt';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import {
   UpdateUserEmailDto,
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
-} from './dto/update.dto';
-import { UserService } from './user.service';
-import { setCookie } from '../../common/utils/setCookie';
-import { ApiErrorException } from '../../common/exceptions/api-error.exception';
+} from './dto/update.dto.js';
+import { UserService } from './user.service.js';
+import { setCookie } from '../../common/utils/setCookie.js';
+import { ApiErrorException } from '../../common/exceptions/api-error.exception.js';
 
 @Controller('user')
 export class UserController {
@@ -42,8 +42,14 @@ export class UserController {
     try {
       return await this.userService.updateUserProfile(user.sub, userData);
     } catch (error) {
+      const errMsg =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : JSON.stringify(error);
       this.logger.error(
-        `Failed to update profile for user ${user.sub}: ${error.message}`
+        `Failed to update profile for user ${user.sub}: ${errMsg}`
       );
       throw error;
     }
@@ -89,7 +95,14 @@ export class UserController {
         throw error;
       }
 
-      this.logger.error(`Error while updating password: ${error.message}`);
+      const errMsg =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : JSON.stringify(error);
+
+      this.logger.error(`Error while updating password: ${errMsg}`);
       throw new BadRequestException('Failed to update password');
     }
   }

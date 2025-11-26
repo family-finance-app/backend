@@ -2,40 +2,45 @@
   "name": "family-finance-backend",
   "version": "1.0.0",
   "description": "Monolithic backend for Family Finance app",
-  "main": "dist/main.js",
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
-  },
+  "type": "module",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/main.js",
-    "start:dev": "ts-node src/main.ts",
-    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "dev": "tsx src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node --experimental-specifier-resolution=node dist/main.js",
+    "start:dev": "NODE_ENV=development ts-node src/main.ts",
+    "dev:env": "NODE_ENV=development tsx src/main.ts",
+    "prod:env": "NODE_ENV=production node --experimental-specifier-resolution=node dist/main.js",
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "migrate:prod": "prisma migrate deploy",
+    "studio": "prisma studio",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/platform-express": "^11.0.1",
-    "@prisma/client": "^5.22.0",
+    "@prisma/adapter-pg": "^7.0.1",
+    "@prisma/client": "^7.0.1",
     "@types/cookie-parser": "^1.4.9",
     "argon2": "^0.44.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.3.1",
+    "node": "^22.x",
+    "pg": "^8.13.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^20.0.0",
-    "prisma": "^5.22.0",
+    "prisma": "^7.0.1",
+    "tsx": "^4.7.1",
     "ts-node": "^10.9.0",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.x"
   }
 }

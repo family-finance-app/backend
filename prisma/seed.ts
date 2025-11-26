@@ -1,5 +1,11 @@
-import { PrismaClient, TransactionType } from '@prisma/client';
-const prisma = new PrismaClient();
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../src/generated/prisma/client.js';
+import { TransactionType } from '../src/generated/prisma/enums.js';
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+const prisma = new PrismaClient({ adapter });
 
 type SeedCategory = {
   name: string;

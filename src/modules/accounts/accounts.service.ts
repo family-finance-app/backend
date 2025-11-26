@@ -4,9 +4,9 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import { CreateFinAccountDataDto } from './dto/create.dto';
-import { UpdateAccountDto } from './dto/update.dto';
+import { DatabaseService } from '../../database/database.service.js';
+import { CreateFinAccountDataDto } from './dto/create.dto.js';
+import { UpdateAccountDto } from './dto/update.dto.js';
 
 @Injectable()
 export class AccountsService {
@@ -66,7 +66,11 @@ export class AccountsService {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new Error(`Failed to create account: ${error.message}`);
+      throw new Error(
+        `Failed to create account: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
     }
   }
 
@@ -94,7 +98,11 @@ export class AccountsService {
 
       return userAccounts;
     } catch (error) {
-      throw new Error(`Failed to fetch accounts: ${error.message}`);
+      throw new Error(
+        `Failed to fetch accounts: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
     }
   }
 
@@ -172,8 +180,10 @@ export class AccountsService {
       };
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       throw new BadRequestException(
-        `Failed to update account: ${error.message}`
+        `Failed to update account: ${errorMessage}`
       );
     }
   }
@@ -221,13 +231,24 @@ export class AccountsService {
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
 
-      if (error.code === 'P2025') {
+      const prismaCode =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? (error as { code?: string }).code
+          : undefined;
+
+      if (prismaCode === 'P2025') {
         this.logger.warn('Account not found or unauthorized');
         throw new BadRequestException('Account not found or unauthorized');
       }
 
-      this.logger.error(`Failed to delete account ${accountId}:`, error.stack);
-      throw new BadRequestException('Failed to delete account', error.message);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+
+      this.logger.error(`Failed to delete account ${accountId}:`, errorStack);
+      throw new BadRequestException(
+        `Failed to delete account: ${errorMessage}`
+      );
     }
   }
 }

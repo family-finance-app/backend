@@ -5,17 +5,17 @@ import {
   UnauthorizedException,
   HttpStatus,
 } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '../../database/database.service.js';
 import {
   UpdateUserEmailDto,
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
-} from './dto/update.dto';
+} from './dto/update.dto.js';
 import * as argon2 from 'argon2';
 import {
   ApiErrorException,
   ErrorCode,
-} from '../../common/exceptions/api-error.exception';
+} from '../../common/exceptions/api-error.exception.js';
 
 @Injectable()
 export class UserService {
@@ -64,14 +64,17 @@ export class UserService {
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
 
-      if (error.code === 'P2025') {
+      if ((error as any)?.code === 'P2025') {
         this.logger.warn(`User not found [ID: ${userId}]`);
         throw new BadRequestException('User not found');
       }
 
+      const errMessage = error instanceof Error ? error.message : String(error);
+      const errStack = error instanceof Error ? error.stack : undefined;
+
       this.logger.error(
-        `Failed to update user profile [ID: ${userId}]: ${error.message}`,
-        error.stack
+        `Failed to update user profile [ID: ${userId}]: ${errMessage}`,
+        errStack
       );
       throw new BadRequestException(`Failed to update user profile`);
     }
@@ -146,9 +149,12 @@ export class UserService {
         throw error;
       }
 
+      const errMessage = error instanceof Error ? error.message : String(error);
+      const errStack = error instanceof Error ? error.stack : undefined;
+
       this.logger.error(
-        `Unexpected error updating password: ${error.message}`,
-        error.stack
+        `Unexpected error updating password: ${errMessage}`,
+        errStack
       );
       throw new BadRequestException(`Failed to update user password`);
     }
@@ -197,7 +203,10 @@ export class UserService {
       if (error instanceof ApiErrorException) {
         throw error;
       }
-      if (error.code === 'P2025') {
+
+      const err = error as any;
+
+      if (err?.code === 'P2025') {
         this.logger.warn(`User not found [ID: ${userId}]`);
         throw new ApiErrorException(
           'User not found',
@@ -206,7 +215,7 @@ export class UserService {
         );
       }
 
-      if (error.code === 'P2002') {
+      if (err?.code === 'P2002') {
         this.logger.warn(`Email already exists: ${emailData.newEmail}`);
         throw new ApiErrorException(
           'Email is already in use. Please use a different email.',
@@ -215,9 +224,12 @@ export class UserService {
         );
       }
 
+      const errMessage = err instanceof Error ? err.message : String(err);
+      const errStack = err instanceof Error ? err.stack : undefined;
+
       this.logger.error(
-        `Failed to update email for user [ID: ${userId}]: ${error.message}`,
-        error.stack
+        `Failed to update email for user [ID: ${userId}]: ${errMessage}`,
+        errStack
       );
       throw new ApiErrorException(
         'Failed to update email. Please try again later.',

@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { AuthModule } from './modules/auth/auth.module';
-import { AccountsModule } from './modules/accounts/accounts.module';
-import { TransactionsModule } from './modules/transactions/transactions.module';
-import { DatabaseModule } from './database/database.module';
-import { CategoriesModule } from './modules/categories/categories.module';
-import { UserModule } from './modules/user/user.module';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { AccountsModule } from './modules/accounts/accounts.module.js';
+import { TransactionsModule } from './modules/transactions/transactions.module.js';
+import { DatabaseModule } from './database/database.module.js';
+import { CategoriesModule } from './modules/categories/categories.module.js';
+import { UserModule } from './modules/user/user.module.js';
 
 @Module({
   imports: [

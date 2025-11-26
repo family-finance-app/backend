@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 import cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 
@@ -19,10 +19,13 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 3000;
+  const nodeEnv = process.env.NODE_ENV || 'development';
   await app.listen(port);
 
-  console.log(`Family Finance Backend is running on: http://localhost:${port}`);
-  console.log(`API endpoints: http://localhost:${port}/api`);
+  console.log(`Family Finance Backend`);
+  console.log(`Environment: ${nodeEnv}`);
+  // console.log(`Running on: http://localhost:${port}`);
+  console.log(`API endpoints: http://localhost:${port}/api\n`);
 }
 
 bootstrap();
