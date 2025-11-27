@@ -118,8 +118,7 @@ jobs:
     timeout-minutes: 10
     needs: [init]
     environment:
-      name: ${{ env.ENVIRONMENT }}
-      url: https://${{ secrets.REMOTE_HOST }}
+      name: dev
     permissions:
       contents: read
       packages: write
