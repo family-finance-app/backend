@@ -219,7 +219,7 @@ jobs:
     name: Publish Release
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [docker-build-and-publish]
+    needs: [init, docker-build-and-publish]
     if: github.event_name == 'push'
     permissions:
       contents: write
@@ -248,3 +248,23 @@ jobs:
           extra_plugins: |
             conventional-changelog-conventionalcommits@8.0.0
             @semantic-release/github@10.3.5
+
+      - name: Deploy via SSH
+        uses: easingthemes/ssh-deploy@v5
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: "/home/${{ secrets.REMOTE_USER }}/${{ github.repository }}"
+          SOURCE: "docker-compose.yml"
+          SCRIPT_BEFORE_REQUIRED: true
+          SCRIPT_BEFORE: |
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}
+          SCRIPT_AFTER_REQUIRED: true
+          SCRIPT_AFTER: |
+            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" > .env
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            sed -i 's/latest/${{ needs.init.outputs.release_version }}/g' docker-compose.yml
+            sed -i 's/8080/8081/g' docker-compose.yml
+            docker compose up -d

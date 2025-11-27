@@ -1,20 +1,13 @@
 services:
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
-    container_name: family-finance-backend
-    env_file:
-      - .env.prod
+    image: ghcr.io/family-finance-app/backend:latest
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL_PROD}
+      - PORT=3000
+      - JWT_EXPIRES_IN=1h
+      - JWT_REFRESH_EXPIRES_IN=7d
     ports:
-      - "3000:3000"
-    networks:
-      - family-finance-network
+      - "8080:3000"
     restart: unless-stopped
     healthcheck:
       test:
@@ -26,7 +19,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-networks:
-  family-finance-network:
-    external: true
