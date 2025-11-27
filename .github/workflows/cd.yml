@@ -268,5 +268,5 @@ jobs:
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/.env
             sed -i 's/latest/${{ needs.init.outputs.release_version }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml
             sed -i 's/8080/8081/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml
-            docker compose up -f /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml -d
-            docker image prune -af
+            docker compose --file /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml up --detach
+            docker image prune --all --force
