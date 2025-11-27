@@ -263,9 +263,10 @@ jobs:
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}
           SCRIPT_AFTER_REQUIRED: true
           SCRIPT_AFTER: |
-            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" > .env
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-            sed -i 's/latest/${{ needs.init.outputs.release_version }}/g' docker-compose.yml
-            sed -i 's/8080/8081/g' docker-compose.yml
-            docker compose up -d
+            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" > /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/.env
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/.env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/.env
+            sed -i 's/latest/${{ needs.init.outputs.release_version }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml
+            sed -i 's/8080/8081/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml
+            docker compose up -f /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml -d
+            docker image prune -af
