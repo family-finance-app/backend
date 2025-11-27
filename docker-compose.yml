@@ -6,6 +6,7 @@ services:
       - PORT=3000
       - JWT_EXPIRES_IN=1h
       - JWT_REFRESH_EXPIRES_IN=7d
+      - DATABASE_URL_PROD=${DATABASE_URL}
     ports:
       - "8080:3000"
     restart: unless-stopped
