@@ -1,4 +1,4 @@
-name: CD
+name: CD-Prod
 on:
   workflow_dispatch:
     inputs:
@@ -20,6 +20,7 @@ env:
   KICS_SCAN_PATH: "./"
   IMAGE_NAME: ${{ github.repository }}
   IMAGE_PLATFORMS: "linux/amd64"
+  ENVIRONMENT: "prod"
 
 defaults:
   run:
@@ -28,12 +29,12 @@ defaults:
 permissions: {}
 
 concurrency:
-  group: CD
+  group: CD-Prod
   cancel-in-progress: false
 
 jobs:
   init:
-    name: Initialize CD for ${{ github.ref_name }}
+    name: Initialize CD to Prod for ${{ github.ref_name }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -130,6 +131,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [init]
+    environment:
+      name: ${{ env.ENVIRONMENT }}
+      url: https://${{ secrets.REMOTE_HOST }}
     permissions:
       contents: read
       packages: write
@@ -182,9 +186,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.short_sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}-${{ env.ENVIRONMENT }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-${{ env.ENVIRONMENT }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             SHORT_SHA=${{ needs.init.outputs.short_sha }}
@@ -199,9 +203,9 @@ jobs:
           # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
           TAGS: |
             ${{ steps.meta.outputs.tags }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.short_sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}-${{ env.ENVIRONMENT }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-${{ env.ENVIRONMENT }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
         run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
 
@@ -215,8 +219,8 @@ jobs:
           delete-only-untagged-versions: true
           token: ${{ github.token }}
 
-  release:
-    name: Publish Release
+  deploy:
+    name: Deploy to Prod
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [init, docker-build-and-publish]
@@ -255,18 +259,18 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: "/home/${{ secrets.REMOTE_USER }}/${{ github.repository }}"
+          TARGET: "/home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}"
           SOURCE: "docker-compose.yml"
           SCRIPT_BEFORE_REQUIRED: true
           SCRIPT_BEFORE: |
-            mkdir -p /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}
+            mkdir -p /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}-${{ env.ENVIRONMENT }}
           SCRIPT_AFTER_REQUIRED: true
           SCRIPT_AFTER: |
-            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" > /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/.env
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/.env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/.env
-            sed -i 's/latest/${{ needs.init.outputs.release_version }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml
-            sed -i 's/8080/8081/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml
-            docker compose --file /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/docker-compose.yml up --detach
+            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" > /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            sed -i 's/latest/${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/docker-compose.yml
+            sed -i 's/8080/${{ vars.APP_PORT }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/docker-compose.yml
+            docker compose --file /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/docker-compose.yml up --detach
             docker image prune --all --force

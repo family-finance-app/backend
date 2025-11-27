@@ -2,7 +2,7 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches-ignore: ["master", "main", "dependabot/**"]
+    branches-ignore: ["master", "main", "develop", "dependabot/**"]
 
 env:
   REGISTRY: "ghcr.io"
