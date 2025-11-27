@@ -210,6 +210,8 @@ jobs:
     timeout-minutes: 5
     needs: [init, docker-build-and-publish]
     if: github.event_name == 'push'
+    environment:
+      name: dev
     permissions:
       contents: write
       issues: write
