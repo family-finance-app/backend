@@ -265,7 +265,7 @@ jobs:
           SCRIPT_BEFORE_REQUIRED: true
           SCRIPT_BEFORE: |
             mkdir -p /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.release_version }}-${{ env.ENVIRONMENT }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }}
           SCRIPT_AFTER_REQUIRED: true
           SCRIPT_AFTER: |
             echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" > /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
