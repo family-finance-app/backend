@@ -16,9 +16,9 @@ export class AppService {
       version: '1.0.0',
       description: 'Monolithic backend API for Family Finance application',
       endpoints: {
-        auth: '/api/auth',
-        accounts: '/api/accounts',
-        transactions: '/api/transactions',
+        auth: '/auth',
+        accounts: '/accounts',
+        transactions: '/transactions',
       },
     };
   }

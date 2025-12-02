@@ -2,11 +2,11 @@ services:
   backend:
     image: ghcr.io/family-finance-app/backend:latest
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - JWT_EXPIRES_IN=1h
-      - JWT_REFRESH_EXPIRES_IN=7d
-      - DATABASE_URL_PROD=${DATABASE_URL}
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
+      - DATABASE_URL=${DATABASE_URL}
     ports:
       - "8080:3000"
     restart: unless-stopped
@@ -14,9 +14,18 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  redis:
+    image: redis:7.2
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+      

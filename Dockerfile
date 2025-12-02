@@ -17,8 +17,6 @@ RUN npm run build
 
 RUN ls -la dist/ && echo "Build completed successfully"
 
-RUN npm prune --omit=dev
-
 # Production stage
 FROM node:20-alpine
 
@@ -40,6 +38,6 @@ RUN ls -la dist/ && echo "Files copied to production image"
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 CMD ["node", "dist/main.js"]

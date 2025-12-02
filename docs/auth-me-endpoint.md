@@ -7,7 +7,7 @@ Returns information about the currently authenticated user.
 ### Endpoint
 
 ```
-GET /api/auth/me
+GET /auth/me
 ```
 
 ### Authentication
@@ -75,14 +75,14 @@ User not found:
 #### cURL
 
 ```bash
-curl -X GET http://localhost:3000/api/auth/me \
+curl -X GET http://localhost:3000/auth/me \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 #### JavaScript (Fetch)
 
 ```javascript
-const response = await fetch('http://localhost:3000/api/auth/me', {
+const response = await fetch('http://localhost:3000/auth/me', {
   method: 'GET',
   headers: {
     Authorization: `Bearer ${accessToken}`,

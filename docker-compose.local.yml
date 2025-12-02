@@ -1,14 +1,14 @@
+name: ${PROJECT_TAG:-family-finance}
+
 services:
   backend:
     build:
       context: .
       dockerfile: Dockerfile
       target: builder
-      args:
-        NODE_ENV: development
-    container_name: family-finance-backend-dev
+    container_name: backend_local
     env_file:
-      - .env.local
+      - .env
     environment:
       - NODE_ENV=development
     ports:
@@ -20,17 +20,26 @@ services:
     networks:
       - family-finance-network
     restart: unless-stopped
-    command: npm run dev:env
+    command: npm run dev
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  redis:
+    image: redis:7.2
+    container_name: redis_local
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
 
 networks:
   family-finance-network:

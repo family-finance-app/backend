@@ -8,7 +8,6 @@ lerna-debug.log*
 # Build artifacts
 dist/
 build/
-lib/
 out/
 
 # Environment variables
