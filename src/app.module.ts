@@ -7,6 +7,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module.j
 import { DatabaseModule } from './database/database.module.js';
 import { CategoriesModule } from './modules/categories/categories.module.js';
 import { UserModule } from './modules/user/user.module.js';
+import { MetricsModule } from './modules/metrics/metrics.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UserModule } from './modules/user/user.module.js';
     TransactionsModule,
     CategoriesModule,
     UserModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
