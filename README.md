@@ -2,6 +2,11 @@
 
 Monolithic NestJS 11 backend for the Family Finance platform. The service exposes authentication, account, transaction, category, and user APIs backed by PostgreSQL through Prisma. The application can run locally, inside Docker, or as a production container that serves compiled TypeScript.
 
+## Hosted Environments
+
+- Development API: [https://api-dev.familyfinance.site](https://api-dev.familyfinance.site)
+- Production API: [https://api.familyfinance.site](https://api.familyfinance.site)
+
 ## Features
 
 - JWT authentication with httpOnly refresh cookies and access tokens returned in the response body
