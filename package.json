@@ -4,11 +4,11 @@
   "description": "Monolithic backend for Family Finance app",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/main.ts",
+    "dev": "node --loader ts-node/esm src/main.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node --experimental-specifier-resolution=node dist/main.js",
-    "start:dev": "NODE_ENV=development ts-node src/main.ts",
-    "dev:env": "NODE_ENV=development tsx src/main.ts",
+    "start:dev": "NODE_ENV=development node --loader ts-node/esm src/main.ts",
+    "dev:env": "NODE_ENV=development node --loader ts-node/esm src/main.ts",
     "prod:env": "NODE_ENV=production node --experimental-specifier-resolution=node dist/main.js",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
@@ -32,6 +32,7 @@
     "node": "^22.x",
     "pg": "^8.13.0",
     "prom-client": "^15.1.3",
+    "redis": "^5.10.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
