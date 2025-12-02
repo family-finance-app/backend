@@ -2,9 +2,12 @@
 
 NestJS monolithic backend application for Family Finance with support for **development** and **production** environments. Includes authentication, account management, transaction handling, and multi-database deployment.
 
-## 🏗️ Architecture
+## Architecture
 
 ```
+https://api-dev.familyfinance.site/ - development domain
+https://api.familyfinance.site - production domain
+
 backend/
 ├── src/
 │   ├── main.ts                    # Application entry point
