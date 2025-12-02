@@ -5,8 +5,9 @@ NestJS monolithic backend application for Family Finance with support for **deve
 ## Architecture
 
 ```
-https://api-dev.familyfinance.site/ - development domain
-https://api.familyfinance.site - production domain
+API Domains:**
+- Development: https://api-dev.familyfinance.site/
+- Production: https://api.familyfinance.site
 
 backend/
 ├── src/
@@ -175,7 +176,7 @@ JWT_REFRESH_EXPIRES_IN=7d         # Refresh token lifetime
 
 **Note:** `prisma.config.ts` automatically selects `DATABASE_URL_DEV` or `DATABASE_URL_PROD` based on `NODE_ENV`.
 
-## 📚 API Endpoints
+## API Endpoints
 
 ### Health Check
 
@@ -207,7 +208,7 @@ JWT_REFRESH_EXPIRES_IN=7d         # Refresh token lifetime
 
 - `GET /api/categories` - List categories
 
-## 🗄️ Database
+## Database
 
 ### Schema
 
