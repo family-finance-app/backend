@@ -14,18 +14,26 @@ Monolithic NestJS 11 backend for the Family Finance platform. The service expose
 - Global validation pipeline, cookie parsing, and modular NestJS architecture
 - Docker multi-stage image and docker-compose stack
 - GitHub Actions workflows for development and production deployment
+- Swagger/OpenAPI documentation at `/api` endpoint
+- Health checks for database and Redis connectivity
+- Support for account transfers between user accounts
+- Multiple account types (Debit, Credit, Cash, Bank, Investment, Deposit, Digital, Savings)
+- Multi-currency support (UAH, USD, EUR)
+- Transaction categories with icons and colors
 
 ## Technology Stack
 
 | Layer         | Tools                                                   |
 | ------------- | ------------------------------------------------------- |
-| Runtime       | Node.js 20, TypeScript                                  |
+| Runtime       | Node.js 22, TypeScript 5.9                              |
 | Framework     | NestJS 11, class-validator, class-transformer           |
-| Database      | PostgreSQL, Prisma ORM, @prisma/adapter-pg              |
-| Cache         | Redis 7 (official image)                                |
+| Database      | PostgreSQL, Prisma 7 ORM, @prisma/adapter-pg            |
+| Cache         | Redis 7 (ioredis client)                                |
 | Auth/Security | @nestjs/jwt, Argon2, cookie-parser                      |
+| API Docs      | @nestjs/swagger, swagger-ui-express                     |
+| Health Checks | @nestjs/terminus, @songkeys/nestjs-redis-health         |
 | Container     | Docker, docker-compose                                  |
-| Observability | prom-client, Prometheus scraping, Grafana visualitation |
+| Observability | prom-client, Prometheus scraping, Grafana visualization |
 
 ## Project Layout
 
@@ -34,15 +42,19 @@ Monolithic NestJS 11 backend for the Family Finance platform. The service expose
 ├── src/
 │   ├── main.ts                 # Bootstrap file
 │   ├── app.{controller,service,module}.ts
+│   ├── common/                 # Shared utilities and exceptions
+│   │   ├── exceptions/         # Custom API exceptions
+│   │   └── utils/              # Cookie, validation helpers
 │   ├── database/               # Prisma service wrapper
 │   ├── lib/redis.ts            # Redis client configuration
 │   └── modules/
-│       ├── auth/
-│       ├── accounts/
-│       ├── transactions/
-│       ├── categories/
+│       ├── auth/               # Authentication (signup, login, refresh, logout)
+│       ├── accounts/           # Financial accounts management
+│       ├── transactions/       # Income, expense, and transfer transactions
+│       ├── categories/         # Transaction categories
+│       ├── health/             # Health check endpoint (database + Redis)
 │       ├── metrics/            # Prometheus exposition endpoint
-│       └── user/
+│       └── user/               # User profile management
 ├── prisma/
 │   ├── schema.prisma
 │   ├── migrations/
@@ -59,7 +71,7 @@ Monolithic NestJS 11 backend for the Family Finance platform. The service expose
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - npm 10+
 - PostgreSQL database accessible from the backend
 - Redis 7+ if you want to exercise caching outside of docker-compose
@@ -143,6 +155,7 @@ The Dockerfile uses a builder stage for TypeScript compilation and a slim runtim
 | `JWT_REFRESH_EXPIRES_IN` | Refresh token TTL (for example `7d`)         |
 | `REDIS_HOST`             | Redis host name or IP                        |
 | `REDIS_PORT`             | Redis port number                            |
+| `REDIS_PASSWORD`         | Redis password (optional)                    |
 
 ## NPM Scripts
 
@@ -150,8 +163,9 @@ The Dockerfile uses a builder stage for TypeScript compilation and a slim runtim
 | ---------------------- | --------------------------------------------------- |
 | `npm run dev`          | Start Nest using `node --loader ts-node/esm`        |
 | `npm run dev:env`      | Same as `dev` but sets `NODE_ENV=development`       |
+| `npm run start:dev`    | Alias for `dev:env`                                 |
 | `npm run build`        | Compile TypeScript via `tsc -p tsconfig.build.json` |
-| `npm start`            | Run compiled app with `node dist/src/main.js`       |
+| `npm start`            | Run compiled app with `node dist/main.js`           |
 | `npm run prod:env`     | Same as `start` with `NODE_ENV=production`          |
 | `npm run generate`     | Execute `prisma generate`                           |
 | `npm run migrate`      | Execute `prisma migrate dev`                        |
@@ -161,10 +175,15 @@ The Dockerfile uses a builder stage for TypeScript compilation and a slim runtim
 
 ## Database and Prisma
 
-- Schema definitions are in `prisma/schema.prisma` with dedicated models for users, accounts, transactions, categories, goals, notifications, and cross-entity join tables.
+- Schema definitions are in `prisma/schema.prisma` with dedicated models for users, groups, accounts, transactions, categories, goals, and notifications.
+- Supported enums:
+  - `AccountType`: DEBIT, CREDIT, CASH, BANK, INVESTMENT, DEPOSIT, DIGITAL, SAVINGS
+  - `CurrencyType`: UAH, USD, EUR
+  - `TransactionType`: EXPENSE, INCOME, TRANSFER
 - Generated client code lives inside `prisma/generated` and is imported through path aliases (for example `../../prisma/generated/client`).
 - Development migrations run with `npm run migrate`; production deployments use `npm run migrate:prod` to avoid accidental schema drift.
 - The `DatabaseService` wraps PrismaClient with `PrismaPg` to leverage the native Node PostgreSQL driver.
+- Cascade deletion is configured for transactions when their parent account is deleted.
 
 ## Redis Caching
 
@@ -179,25 +198,31 @@ The Dockerfile uses a builder stage for TypeScript compilation and a slim runtim
 
 ## API Surface
 
-| Domain       | Endpoint                         | Description                                       |
-| ------------ | -------------------------------- | ------------------------------------------------- |
-| Health       | `GET /health`                    | Returns deployment status and timestamp           |
-| Metrics      | `GET /metrics`                   | Prometheus-compatible runtime metrics             |
-| Auth         | `POST /auth/signup`              | Register a user                                   |
-|              | `POST /auth/login`               | Issue access and refresh tokens                   |
-|              | `POST /auth/refresh`             | Rotate access token using refresh cookie          |
-|              | `POST /auth/logout`              | Revoke refresh token cookie                       |
-|              | `GET /auth/me`                   | Return authenticated user profile                 |
-| Accounts     | `GET /accounts/my`               | List accounts belonging to the authenticated user |
-|              | `POST /accounts/create`          | Create an account scoped to the current user      |
-|              | `PUT /accounts/:accountId`       | Update account metadata                           |
-|              | `DELETE /accounts/:accountId`    | Remove an account                                 |
-| Transactions | `GET /transactions`              | List transactions                                 |
-|              | `POST /transactions`             | Create a transaction                              |
-|              | `PUT /transactions/:id`          | Update a transaction                              |
-|              | `DELETE /transactions/:id`       | Remove a transaction                              |
-| Categories   | `GET /categories`                | List categories                                   |
-| User         | `PATCH /user` and related routes | Manage user profile data                          |
+Swagger documentation is available at `/api` when the server is running.
+
+| Domain       | Endpoint                          | Description                                                      |
+| ------------ | --------------------------------- | ---------------------------------------------------------------- |
+| Health       | `GET /health`                     | Health check for database and Redis (internal, blocked by nginx) |
+| Metrics      | `GET /metrics`                    | Prometheus-compatible runtime metrics                            |
+| Auth         | `GET /auth/me`                    | Return authenticated user profile                                |
+|              | `POST /auth/signup`               | Register a new user                                              |
+|              | `POST /auth/login`                | Issue access and refresh tokens                                  |
+|              | `POST /auth/refresh`              | Rotate access token using refresh cookie                         |
+|              | `POST /auth/logout`               | Revoke refresh token cookie                                      |
+| Accounts     | `GET /accounts/my`                | List accounts belonging to the authenticated user                |
+|              | `GET /accounts/user/:userId`      | Get accounts for a specific user (own accounts only)             |
+|              | `POST /accounts/create`           | Create an account scoped to the current user                     |
+|              | `PUT /accounts/:accountId`        | Update account metadata                                          |
+|              | `DELETE /accounts/:accountId`     | Remove an account and associated transactions                    |
+| Transactions | `GET /transactions/all`           | List all transactions for authenticated user                     |
+|              | `POST /transactions/create`       | Create an income or expense transaction                          |
+|              | `POST /transactions/transfer`     | Create a transfer between two accounts                           |
+|              | `PUT /transactions/update`        | Update a transaction                                             |
+|              | `DELETE /transactions/delete/:id` | Remove a transaction                                             |
+| Categories   | `GET /categories`                 | List all transaction categories                                  |
+| User         | `PUT /user/profile`               | Update user profile (name, birthdate)                            |
+|              | `PUT /user/password`              | Change user password                                             |
+|              | `PUT /user/email`                 | Change user email address                                        |
 
 Controllers enforce JWT authentication via `JwtAuthGuard`, use DTO validation, and rely on Prisma for persistence logic.
 
