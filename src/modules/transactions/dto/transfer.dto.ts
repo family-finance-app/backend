@@ -20,17 +20,17 @@ export class CreateTransferDataDto {
   @IsEnum(CurrencyType)
   currency: CurrencyType;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
   groupId?: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   date?: string;
@@ -45,12 +45,12 @@ export class UpdateTransferDataDto {
   @IsNumber()
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   date?: string;

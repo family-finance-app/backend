@@ -10,11 +10,11 @@ export class UpdateAccountDto {
   @IsString()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ enum: AccountType })
   @IsEnum(AccountType)
   type: AccountType;
 
-  @ApiProperty()
+  @ApiProperty({ enum: CurrencyType })
   @IsEnum(CurrencyType)
   currency: CurrencyType;
 }

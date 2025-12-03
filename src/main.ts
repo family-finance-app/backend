@@ -11,11 +11,23 @@ async function bootstrap() {
     .setTitle('Family Finance API')
     .setDescription('API docs for the backend services')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'accessToken',
+        description:
+          'To get an access token it is necessary to pass the authentification through /auth/signup endpoint',
+        in: 'header',
+      },
+      'accessToken'
+    )
+
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('/', app, document, {
+  SwaggerModule.setup('/docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
   });
 

@@ -127,11 +127,4 @@ export class AuthService {
   refresh(req: Request) {
     return getCookie(req, 'refresh_token');
   }
-
-  healthCheck() {
-    return {
-      message: 'Auth module is available',
-      status: 'healthy',
-    };
-  }
 }

@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTransactionDataDto {
-  @ApiProperty()
+  @ApiProperty({ enum: TransactionType })
   @IsEnum(TransactionType)
   type: TransactionType;
 
@@ -19,7 +19,7 @@ export class CreateTransactionDataDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   date?: string;
@@ -31,7 +31,7 @@ export class CreateTransactionDto extends CreateTransactionDataDto {
   @Type(() => Number)
   accountId: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
@@ -42,7 +42,7 @@ export class CreateTransactionDto extends CreateTransactionDataDto {
   @Type(() => Number)
   categoryId: number;
 
-  @ApiProperty()
+  @ApiProperty({ enum: CurrencyType })
   @IsEnum(CurrencyType)
   currency: CurrencyType;
 }

@@ -9,7 +9,7 @@ export class UpdateTransactionDto {
   @Type(() => Number)
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ enum: TransactionType })
   @IsEnum(TransactionType)
   type: TransactionType;
 
@@ -25,11 +25,11 @@ export class UpdateTransactionDto {
   @Type(() => Number)
   categoryId: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   description?: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   date?: string;

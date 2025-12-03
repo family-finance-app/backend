@@ -8,18 +8,18 @@ export class CreateAccountDto {
   @IsString()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ enum: AccountType })
   @IsEnum(AccountType)
   type: AccountType;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsNumber()
   @Min(0)
   @IsOptional()
   @Type(() => Number)
   balance?: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false, enum: CurrencyType })
   @IsEnum(CurrencyType)
   @IsOptional()
   currency?: CurrencyType;

@@ -1,11 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service.js';
 
 @Injectable()
 export class CategoriesService {
   constructor(private database: DatabaseService) {}
 
-  async getAllCategories() {
+  async getAllCategories(userId: number) {
+    if (!userId || isNaN(userId))
+      throw new BadRequestException('userId is required');
     try {
       const categories = await this.database.category.findMany({
         // select: {
@@ -29,12 +35,5 @@ export class CategoriesService {
         }`
       );
     }
-  }
-
-  healthCheck() {
-    return {
-      message: '/categories module is available',
-      status: 'healthy',
-    };
   }
 }
