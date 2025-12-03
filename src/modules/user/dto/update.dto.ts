@@ -8,11 +8,14 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserProfileDto {
+  @ApiProperty()
   @IsString()
   name: string;
 
+  @ApiProperty()
   @IsString()
   birthdate: string;
 }
@@ -35,10 +38,12 @@ export class PasswordsDontMatchConstraint
 }
 
 export class UpdateUserPasswordDto {
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   oldPassword: string;
 
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   @MinLength(8, { message: 'New password must contain at least 8 characters' })
@@ -47,6 +52,7 @@ export class UpdateUserPasswordDto {
 }
 
 export class UpdateUserEmailDto {
+  @ApiProperty()
   @IsString()
   @IsEmail()
   @IsNotEmpty()

@@ -1,17 +1,44 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service.js';
+import {
+  HealthCheck,
+  HealthCheckService,
+  HealthCheckResult,
+  PrismaHealthIndicator,
+} from '@nestjs/terminus';
+import { RedisHealthIndicator } from '@songkeys/nestjs-redis-health';
+import Redis from 'ioredis';
+import { DatabaseService } from './database/database.service.js';
+import { ApiForbiddenResponse } from '@nestjs/swagger';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  private readonly redis: Redis;
 
-  @Get('health')
-  getHealth() {
-    return this.appService.getHealth();
+  constructor(
+    private readonly health: HealthCheckService,
+    private readonly prismaHealth: PrismaHealthIndicator,
+    private readonly db: DatabaseService,
+    private readonly redisHealth: RedisHealthIndicator
+  ) {
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST || 'redis',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD,
+    });
   }
 
-  @Get()
-  getInfo() {
-    return this.appService.getInfo();
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @Get('health')
+  @HealthCheck()
+  async healthChecks(): Promise<HealthCheckResult> {
+    return await this.health.check([
+      () => this.prismaHealth.pingCheck('database', this.db, { timeout: 500 }),
+      () =>
+        this.redisHealth.checkHealth('redis', {
+          type: 'redis',
+          client: this.redis,
+          timeout: 500,
+        }),
+    ]);
   }
 }
