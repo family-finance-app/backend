@@ -2,9 +2,34 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const config = new DocumentBuilder()
+    .setTitle('Family Finance API')
+    .setDescription('API docs for the backend services')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'accessToken',
+        description:
+          'To get an access token it is necessary to pass the authentification through /auth/signup endpoint',
+        in: 'header',
+      },
+      'accessToken'
+    )
+
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('/docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
 
   app.use(cookieParser());
 

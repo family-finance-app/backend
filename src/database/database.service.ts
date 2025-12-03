@@ -2,12 +2,17 @@ import 'dotenv/config';
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import pg from 'pg';
+
+const { Pool } = pg;
 
 @Injectable()
 export class DatabaseService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  private pool: pg.Pool;
+
   constructor() {
     const nodeEnv = process.env.NODE_ENV || 'development';
     const databaseUrl =
@@ -23,11 +28,14 @@ export class DatabaseService
       );
     }
 
-    const adapter = new PrismaPg({ connectionString: databaseUrl });
+    const pool = new Pool({ connectionString: databaseUrl });
+    const adapter = new PrismaPg(pool);
 
     super({
       adapter,
     });
+
+    this.pool = pool;
   }
 
   async onModuleInit() {
@@ -37,6 +45,7 @@ export class DatabaseService
 
   async onModuleDestroy() {
     await this.$disconnect();
+    await this.pool.end();
     console.log('Disconnected from PostgreSQL database');
   }
 }

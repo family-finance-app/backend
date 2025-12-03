@@ -35,11 +35,19 @@ services:
   redis:
     image: redis:7.2
     container_name: redis_local
-    environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    networks:
+      - family-finance-network
+    healthcheck: 
+      test: 
+        [
+          "CMD-SHELL", 
+          "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   family-finance-network:

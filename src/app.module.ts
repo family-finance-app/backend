@@ -8,6 +8,9 @@ import { DatabaseModule } from './database/database.module.js';
 import { CategoriesModule } from './modules/categories/categories.module.js';
 import { UserModule } from './modules/user/user.module.js';
 import { MetricsModule } from './modules/metrics/metrics.module.js';
+import { TerminusModule } from '@nestjs/terminus';
+import { RedisHealthModule } from '@songkeys/nestjs-redis-health';
+import { HealthModule } from './modules/health/health.module.js';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { MetricsModule } from './modules/metrics/metrics.module.js';
     CategoriesModule,
     UserModule,
     MetricsModule,
+    TerminusModule,
+    RedisHealthModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

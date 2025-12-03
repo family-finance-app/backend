@@ -7,8 +7,13 @@ services:
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
       - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
       - "8080:3000"
+    networks:
+      - app-network
     restart: unless-stopped
     healthcheck:
       test:
@@ -23,9 +28,25 @@ services:
 
   redis:
     image: redis:7.2
-    environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
-      
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    networks:
+      - app-network
+    volumes:
+      - redis-data:/data
+    healthcheck: 
+      test: 
+        [
+          "CMD-SHELL", 
+          "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis-data:

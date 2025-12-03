@@ -23,7 +23,15 @@ import {
 import { UserService } from './user.service.js';
 import { setCookie } from '../../common/utils/setCookie.js';
 import { ApiErrorException } from '../../common/exceptions/api-error.exception.js';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
+@ApiUnauthorizedResponse({
+  description: 'Unauthorized - Invalid or missing JWT token',
+})
 @Controller('user')
 export class UserController {
   private readonly logger = new Logger(UserController.name);
@@ -32,8 +40,12 @@ export class UserController {
     private readonly jwtService: JwtService
   ) {}
 
-  // update name, date of birth
   @Put('profile')
+  @ApiOperation({
+    summary: 'Update user profile',
+    description: 'Updates user profile information (name, date of birth).',
+  })
+  @ApiBearerAuth('accessToken')
   @UseGuards(JwtAuthGuard)
   async updateUserProfile(
     @Body() userData: UpdateUserProfileDto,
@@ -55,8 +67,13 @@ export class UserController {
     }
   }
 
-  // update user password
   @Put('password')
+  @ApiOperation({
+    summary: 'Update user password',
+    description:
+      'Changes the user password. Requires current password for verification. Returns new tokens.',
+  })
+  @ApiBearerAuth('accessToken')
   @UseGuards(JwtAuthGuard)
   async updateUserPassword(
     @Body() passwordData: UpdateUserPasswordDto,
@@ -108,6 +125,12 @@ export class UserController {
   }
 
   @Put('email')
+  @ApiOperation({
+    summary: 'Update user email',
+    description:
+      'Changes the user email address. Returns new tokens with updated email claim.',
+  })
+  @ApiBearerAuth('accessToken')
   @UseGuards(JwtAuthGuard)
   async updateUserEmail(
     @Body() email: UpdateUserEmailDto,

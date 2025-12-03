@@ -17,6 +17,11 @@ import { Response, Request } from 'express';
 import { setCookie } from '../../common/utils/setCookie.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -25,12 +30,16 @@ export class AuthController {
     private readonly jwtService: JwtService
   ) {}
 
-  @Get('health')
-  routeCheck(): any {
-    return this.authService.healthCheck();
-  }
-
   @Get('me')
+  @ApiOperation({
+    summary: 'Get current user',
+    description:
+      'Returns the authenticated user profile data based on the JWT token.',
+  })
+  @ApiBearerAuth('accessToken')
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@CurrentUser() user: { sub: number; email: string }) {
     const userData = await this.authService.getUserById(user.sub);
@@ -41,6 +50,11 @@ export class AuthController {
   }
 
   @Post('signup')
+  @ApiOperation({
+    summary: 'Create new user',
+    description:
+      'Creates a new user account. Returns access token and sets refresh token cookie.',
+  })
   async signup(
     @Body() signupDto: SignUpDto,
     @Res({ passthrough: true }) res: Response
@@ -66,6 +80,14 @@ export class AuthController {
   }
 
   @Post('login')
+  @ApiOperation({
+    summary: 'User login',
+    description:
+      'Authenticates user with email and password. Returns access token and sets refresh token cookie.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid email or password',
+  })
   @HttpCode(200)
   async login(
     @Body() loginDto: LoginDto,
@@ -94,6 +116,14 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description:
+      'Uses refresh token from cookie to generate new access and refresh tokens.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing refresh token',
+  })
   @HttpCode(200)
   refresh(@Res({ passthrough: true }) res: Response, @Req() req: Request) {
     const refreshToken = this.authService.refresh(req);
@@ -127,6 +157,10 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiOperation({
+    summary: 'User logout',
+    description: 'Clears the refresh token cookie and logs out the user.',
+  })
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token', { path: '/' });
     return { message: 'Logged out' };

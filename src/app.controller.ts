@@ -1,17 +1,19 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service.js';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
-  @Get('health')
-  getHealth() {
-    return this.appService.getHealth();
-  }
-
   @Get()
-  getInfo() {
-    return this.appService.getInfo();
+  @ApiTags('App')
+  @ApiOperation({ summary: 'API root endpoint' })
+  @ApiOkResponse({ description: 'Returns basic API information' })
+  getRoot() {
+    return {
+      name: 'Family Finance API',
+      version: '1.0.0',
+      status: 'running',
+      docs: '/docs',
+      healthcheck: '/health',
+    };
   }
 }
