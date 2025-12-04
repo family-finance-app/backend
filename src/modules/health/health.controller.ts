@@ -40,12 +40,12 @@ export class HealthController {
   @HealthCheck()
   async healthChecks(): Promise<HealthCheckResult> {
     return await this.health.check([
-      () => this.prismaHealth.pingCheck('database', this.db, { timeout: 500 }),
+      () => this.prismaHealth.pingCheck('database', this.db, { timeout: 5000 }),
       () =>
         this.redisHealth.checkHealth('redis', {
           type: 'redis',
           client: this.redis,
-          timeout: 500,
+          timeout: 1000,
         }),
     ]);
   }

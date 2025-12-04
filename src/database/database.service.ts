@@ -1,5 +1,10 @@
 import 'dotenv/config';
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import pg from 'pg';
@@ -12,6 +17,7 @@ export class DatabaseService
   implements OnModuleInit, OnModuleDestroy
 {
   private pool: pg.Pool;
+  private readonly logger = new Logger(DatabaseService.name);
 
   constructor() {
     const nodeEnv = process.env.NODE_ENV || 'development';
@@ -28,7 +34,20 @@ export class DatabaseService
       );
     }
 
-    const pool = new Pool({ connectionString: databaseUrl });
+    const pool = new Pool({
+      connectionString: databaseUrl,
+      max: 10, // max num of connections
+      min: 2, // min num of connections to keep alive
+      idleTimeoutMillis: 30000, // close idle connections after 30s
+      connectionTimeoutMillis: 10000, // timeout for new connections
+      keepAlive: true, // keep connections alive (important for cloud DBs)
+      keepAliveInitialDelayMillis: 10000, // start keepalive after 10s
+    });
+
+    pool.on('error', (err) => {
+      console.error('Unexpected database pool error:', err.message);
+    });
+
     const adapter = new PrismaPg(pool);
 
     super({
@@ -40,12 +59,12 @@ export class DatabaseService
 
   async onModuleInit() {
     await this.$connect();
-    console.log('Connected to PostgreSQL database');
+    this.logger.log('Connected to PostgreSQL database');
   }
 
   async onModuleDestroy() {
     await this.$disconnect();
     await this.pool.end();
-    console.log('Disconnected from PostgreSQL database');
+    this.logger.log('Disconnected from PostgreSQL database');
   }
 }
