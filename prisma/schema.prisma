@@ -115,7 +115,7 @@ model AccountsGroup {
 model Transaction {
   id          Int      @id @default(autoincrement())
   accountId   Int      @map("account_id") // source account
-  accountRecipentId Int? @map("account_recipient_id") // for transfers only
+  accountRecipientId Int? @map("account_recipient_id") // for transfers only
   userId      Int      @map("user_id")
   groupId     Int?     @map("group_id")
   categoryId  Int?     @map("category_id")
@@ -129,7 +129,7 @@ model Transaction {
 
   // Relationships
   account              Account   @relation("TransactionSource", fields: [accountId], references: [id], onDelete: Cascade)
-  destinationAccount   Account?  @relation("TransactionRecipient", fields: [accountRecipentId], references: [id], onDelete: Cascade)
+  destinationAccount   Account?  @relation("TransactionRecipient", fields: [accountRecipientId], references: [id], onDelete: Cascade)
   user                 User      @relation(fields: [userId], references: [id])
   group                Group?    @relation(fields: [groupId], references: [id])
   category             Category? @relation(fields: [categoryId], references: [id])

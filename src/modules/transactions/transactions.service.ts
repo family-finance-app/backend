@@ -247,6 +247,7 @@ export class TransactionsService {
           description: true,
           date: true,
           type: true,
+          accountRecipientId: true,
         },
       });
       return userTransactions;
@@ -298,7 +299,7 @@ export class TransactionsService {
         const transfer = await tx.transaction.create({
           data: {
             accountId: transferData.accountId,
-            accountRecipentId: transferData.accountRecipientId,
+            accountRecipientId: transferData.accountRecipientId,
             userId: userId,
             groupId: transferData.groupId,
             categoryId: transferData.categoryId,
@@ -311,7 +312,7 @@ export class TransactionsService {
           select: {
             id: true,
             accountId: true,
-            accountRecipentId: true,
+            accountRecipientId: true,
             userId: true,
             groupId: true,
             categoryId: true,
