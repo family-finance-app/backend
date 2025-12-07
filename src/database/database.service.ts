@@ -20,18 +20,10 @@ export class DatabaseService
   private readonly logger = new Logger(DatabaseService.name);
 
   constructor() {
-    const nodeEnv = process.env.NODE_ENV || 'development';
-    const databaseUrl =
-      nodeEnv === 'production'
-        ? process.env.DATABASE_URL_PROD || process.env.DATABASE_URL
-        : process.env.DATABASE_URL_DEV || process.env.DATABASE_URL;
+    const databaseUrl = process.env.DATABASE_URL;
 
     if (!databaseUrl) {
-      throw new Error(
-        `DATABASE_URL${
-          nodeEnv === 'production' ? '_PROD' : '_DEV'
-        } is not defined`
-      );
+      throw new Error(`DATABASE_URL is not defined`);
     }
 
     const pool = new Pool({
