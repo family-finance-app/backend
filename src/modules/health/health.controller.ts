@@ -47,6 +47,13 @@ export class HealthController {
           client: this.redis,
           timeout: 1000,
         }),
+      () => ({
+        environment: {
+          status: 'up',
+          environment: process.env.NODE_ENV ?? 'undefined',
+          databaseUrl: process.env.DATABASE_URL ?? 'undefined',
+        },
+      }),
     ]);
   }
 }
