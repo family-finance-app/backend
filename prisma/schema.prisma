@@ -155,6 +155,7 @@ model Category {
   // Relationships
   transactions Transaction[]
 
+  @@unique([name, type])
   @@map("categories")
 }
 
