@@ -35,6 +35,8 @@ COPY --from=builder /app/dist ./dist
 
 RUN ls -la dist/ && echo "Files copied to production image"
 
+RUN npx prisma migrate deploy && npx prisma db seed
+
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
