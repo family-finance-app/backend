@@ -32,14 +32,15 @@ RUN npx prisma generate
 ENV NODE_ENV=production
 
 COPY --from=builder /app/dist ./dist
+COPY ../entrypoint.sh ./entrypoint.sh
 
 RUN ls -la dist/ && echo "Files copied to production image"
 
-RUN npx prisma migrate deploy && npx prisma db seed
+RUN chmod +x entrypoint.sh
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-CMD ["node", "dist/main.js"]
+CMD ["sh", "entrypoint.sh"]
