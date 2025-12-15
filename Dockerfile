@@ -11,6 +11,8 @@ RUN npm ci
 
 COPY src ./src
 
+RUN npx prisma generate
+
 RUN npm run build
 
 RUN ls -la dist/ && echo "Build completed successfully"
@@ -25,6 +27,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY prisma ./prisma/
+RUN npx prisma generate
 
 ENV NODE_ENV=production
 
