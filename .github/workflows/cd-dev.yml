@@ -249,9 +249,6 @@ jobs:
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
             echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
             echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "REMOTE_HOST=${{ secrets.REMOTE_HOST }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "REMOTE_USER=${{ secrets.REMOTE_USER }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
             sed -i 's/latest/${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/docker-compose.yml
             cd /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}
             docker compose --env-file ./.env --file ./docker-compose.yml up --detach || exit 1
