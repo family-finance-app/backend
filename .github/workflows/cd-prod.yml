@@ -274,12 +274,12 @@ jobs:
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
             # variables
-            echo "APP_PORT=${{ vars.JOB_NAME.APP_PORT }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "POSTGRES_DB=${{ vars.JOB_NAME.POSTGRES_DB }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "POSTGRES_PORT=${{ vars.JOB_NAME.POSTGRES_PORT }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "POSTGRES_USER=${{ vars.JOB_NAME.POSTGRES_USER }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "REDIS_HOST=${{ vars.JOB_NAME.REDIS_HOST }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "REDIS_PORT=${{ vars.JOB_NAME.REDIS_PORT }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "APP_PORT=${{ vars.APP_PORT }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "POSTGRES_DB=${{ vars.POSTGRES_DB }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "POSTGRES_PORT=${{ vars.POSTGRES_PORT }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "POSTGRES_USER=${{ vars.POSTGRES_USER }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "REDIS_HOST=${{ vars.REDIS_HOST }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "REDIS_PORT=${{ vars.REDIS_PORT }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
             sed -i 's/latest/${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/docker-compose.yml
             cd /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}
             docker compose --env-file ./.env --file ./docker-compose.yml up --detach || exit 1
