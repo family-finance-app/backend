@@ -51,7 +51,7 @@ export class HealthController {
         environment: {
           status: 'up',
           environment: process.env.NODE_ENV ?? 'undefined',
-          databaseUrl: process.env.DATABASE_URL ?? 'undefined',
+          databaseUrl: `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@postgres:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`,
         },
       }),
     ]);

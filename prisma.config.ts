@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 const nodeEnv = process.env.NODE_ENV || 'development';
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@postgres:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`;
 
 if (!databaseUrl) {
   throw new Error(`DATABASE_URL_${nodeEnv.toUpperCase()} is not defined`);
