@@ -1,7 +1,7 @@
 #!/bin/sh
 
-node run migrate:prod
+npx prisma migrate deploy 
 
-node run seed
+npx prisma db seed
 
 node dist/main.js

@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY tsconfig.build.json ./
+COPY prisma.config.ts ./prisma.config.ts
 COPY prisma ./prisma/
 
 RUN npm ci
@@ -32,6 +33,7 @@ RUN npx prisma generate
 ENV NODE_ENV=production
 
 COPY --from=builder /app/dist ./dist
+COPY prisma.config.ts ./prisma.config.ts
 COPY ./entrypoint.sh ./entrypoint.sh
 
 RUN ls -la dist/ && echo "Files copied to production image"
