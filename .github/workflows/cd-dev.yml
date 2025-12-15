@@ -240,14 +240,19 @@ jobs:
           SCRIPT_BEFORE_REQUIRED: true
           SCRIPT_BEFORE: |
             mkdir -p /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }} || exit 1
           SCRIPT_AFTER_REQUIRED: true
           SCRIPT_AFTER: |
             echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" > /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "REMOTE_HOST=${{ secrets.REMOTE_HOST }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "REMOTE_USER=${{ secrets.REMOTE_USER }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
+            echo "SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}" >> /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/.env
             sed -i 's/latest/${{ needs.init.outputs.short_sha }}-${{ env.ENVIRONMENT }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/docker-compose.yml
-            sed -i 's/8080/${{ vars.APP_PORT }}/g' /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}/docker-compose.yml
             cd /home/${{ secrets.REMOTE_USER }}/${{ github.repository }}/${{ env.ENVIRONMENT }}
-            docker compose --env-file ./.env --file ./docker-compose.yml up --detach
+            docker compose --env-file ./.env --file ./docker-compose.yml up --detach || exit 1
             docker image prune --all --force
