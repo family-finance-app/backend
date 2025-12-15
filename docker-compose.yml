@@ -6,7 +6,6 @@ services:
       - PORT=${PORT}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
-      - DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}"
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -45,7 +44,7 @@ services:
       retries: 3
 
   postgres:
-    image: postgres:17
+    image: postgres:17-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -54,7 +53,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}"]
       interval: 10s
