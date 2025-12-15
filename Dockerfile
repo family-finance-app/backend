@@ -32,7 +32,7 @@ RUN npx prisma generate
 ENV NODE_ENV=production
 
 COPY --from=builder /app/dist ./dist
-COPY ../entrypoint.sh ./entrypoint.sh
+COPY ./entrypoint.sh ./entrypoint.sh
 
 RUN ls -la dist/ && echo "Files copied to production image"
 
