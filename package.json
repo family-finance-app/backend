@@ -25,7 +25,7 @@
     "@nestjs/swagger": "^11.2.3",
     "@nestjs/terminus": "^11.0.0",
     "@prisma/adapter-pg": "^7.0.1",
-    "@prisma/client": "^7.0.1",
+    "@prisma/client": "^7.2.0",
     "@songkeys/nestjs-redis-health": "^11.0.0",
     "@types/cookie-parser": "^1.4.9",
     "argon2": "^0.44.0",
