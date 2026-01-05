@@ -14,13 +14,14 @@ export class CategoriesService {
       throw new BadRequestException('userId is required');
     try {
       const categories = await this.database.category.findMany({
-        // select: {
-        //   name: true,
-        //   type: true,
-        //   icon: true,
-        //   color: true,
-        // },
-      }); // TODO: CHANGE REQUEST TO RETURN ICONS AND SYNC DEV AND MAIN DB BRANCHES
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          icon: true,
+          color: true,
+        },
+      });
 
       return {
         data: categories,
