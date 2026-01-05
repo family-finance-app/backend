@@ -20,7 +20,7 @@ export class CategoriesService {
         //   icon: true,
         //   color: true,
         // },
-      });
+      }); // TODO: CHANGE REQUEST TO RETURN ICONS AND SYNC DEV AND MAIN DB BRANCHES
 
       return {
         data: categories,
