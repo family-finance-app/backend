@@ -416,6 +416,15 @@ const incomeCategories: SeedCategory[] = [
   },
 ];
 
+const transferCategories: SeedCategory[] = [
+  {
+    name: 'Transfer',
+    type: TransactionType.TRANSFER,
+    icon: 'ri-arrow-left-right-line',
+    color: '#37426fff',
+  },
+];
+
 async function upsertCategories(categories: SeedCategory[]) {
   for (const c of categories) {
     const existing = await prisma.category.findFirst({
@@ -451,6 +460,7 @@ async function main() {
   console.log('Seeding categories...');
   await upsertCategories(expenseCategories);
   await upsertCategories(incomeCategories);
+  await upsertCategories(transferCategories);
 
   const count = await prisma.category.count();
   console.log(`Seeding done. Total categories in DB: ${count}`);
