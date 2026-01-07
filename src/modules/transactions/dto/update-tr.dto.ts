@@ -9,10 +9,6 @@ export class UpdateTransactionDto {
   @Type(() => Number)
   id: number;
 
-  @ApiProperty({ enum: TransactionType })
-  @IsEnum(TransactionType)
-  type: TransactionType;
-
   @ApiProperty()
   @IsNumber()
   @Min(0.01)

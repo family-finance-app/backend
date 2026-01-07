@@ -116,29 +116,12 @@ export class TransactionsService {
           });
         }
 
-        if (transactionData.type === TransactionType.INCOME) {
-          await tx.account.update({
-            where: { id: existingTransaction.accountId },
-            data: { balance: { increment: transactionData.amount } },
-          });
-        } else if (transactionData.type === TransactionType.EXPENSE) {
-          await tx.account.update({
-            where: { id: existingTransaction.accountId },
-            data: { balance: { decrement: transactionData.amount } },
-          });
-        } else if (transactionData.type === TransactionType.TRANSFER) {
-          throw new BadRequestException(
-            'Use transfer endpoint to move funds between accounts'
-          );
-        }
-
         const tr = await tx.transaction.update({
           where: { id: transactionData.id },
           data: {
             amount: transactionData.amount,
             description: transactionData.description ?? undefined,
             category: { connect: { id: transactionData.categoryId } },
-            type: transactionData.type,
             date: transactionData.date ?? existingTransaction.date,
           },
           select: {
