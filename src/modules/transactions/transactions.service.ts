@@ -222,6 +222,11 @@ export class TransactionsService {
         select: {
           id: true,
           accountId: true,
+          account: {
+            select: {
+              balance: true,
+            },
+          },
           userId: true,
           groupId: true,
           categoryId: true,
