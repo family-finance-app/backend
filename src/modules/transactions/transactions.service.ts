@@ -225,6 +225,11 @@ export class TransactionsService {
           userId: true,
           groupId: true,
           categoryId: true,
+          category: {
+            select: {
+              name: true,
+            },
+          },
           amount: true,
           currency: true,
           description: true,
