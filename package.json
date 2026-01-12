@@ -32,7 +32,7 @@
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.3.1",
-    "ioredis": "^5.8.2",
+    "ioredis": "^5.9.1",
     "node": "^24.x",
     "pg": "^8.13.0",
     "prom-client": "^15.1.3",
