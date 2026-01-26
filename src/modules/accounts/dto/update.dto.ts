@@ -1,7 +1,4 @@
-//name, type, currency, descr?
-
-import { IsString, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsEnum } from 'class-validator';
 import { AccountType, CurrencyType } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 

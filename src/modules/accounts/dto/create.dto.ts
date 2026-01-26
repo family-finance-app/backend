@@ -1,4 +1,12 @@
-import { IsString, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsNotEmpty,
+  MaxLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { AccountType, CurrencyType } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
@@ -6,10 +14,12 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateAccountDto {
   @ApiProperty()
   @IsString()
+  @IsNotEmpty()
   name: string;
 
   @ApiProperty({ enum: AccountType })
   @IsEnum(AccountType)
+  @IsNotEmpty()
   type: AccountType;
 
   @ApiProperty({ required: false })
@@ -19,10 +29,21 @@ export class CreateAccountDto {
   @Type(() => Number)
   balance?: number;
 
-  @ApiProperty({ required: false, enum: CurrencyType })
+  @ApiProperty({ required: true, enum: CurrencyType })
   @IsEnum(CurrencyType)
+  @IsNotEmpty()
+  currency: CurrencyType;
+
+  @ApiProperty({ required: false })
+  @IsString()
   @IsOptional()
-  currency?: CurrencyType;
+  @MaxLength(30)
+  description?: string;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  groupId?: number;
 }
 
 export class CreateFinAccountDataDto extends CreateAccountDto {
