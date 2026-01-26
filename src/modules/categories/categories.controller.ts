@@ -18,12 +18,11 @@ export class CategoriesController {
   @Get()
   @ApiOperation({
     summary: 'Get all categories',
-    description:
-      'Returns all available transaction categories (income and expense types).',
+    description: 'Returns all available transaction categories',
   })
   @ApiBearerAuth('accessToken')
   @UseGuards(JwtAuthGuard)
   async getAllCategories(@CurrentUser() user: { sub: number; email: string }) {
-    return this.categoriesService.getAllCategories(user.sub);
+    return this.categoriesService.getAllCategories();
   }
 }
