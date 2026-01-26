@@ -4,6 +4,7 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { AccountsModule } from './modules/accounts/accounts.module.js';
 import { TransactionsModule } from './modules/transactions/transactions.module.js';
+import { CurrencyModule } from './modules/currency/currency.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { CategoriesModule } from './modules/categories/categories.module.js';
 import { UserModule } from './modules/user/user.module.js';
@@ -18,6 +19,7 @@ import { HealthModule } from './modules/health/health.module.js';
     AuthModule,
     AccountsModule,
     TransactionsModule,
+    CurrencyModule,
     CategoriesModule,
     UserModule,
     MetricsModule,
