@@ -36,7 +36,7 @@ export class TransactionsController {
   @ApiBearerAuth('accessToken')
   @UseGuards(JwtAuthGuard)
   async getMyTransactions(@CurrentUser() user: { sub: number; email: string }) {
-    return this.transactionsService.getUserTransactionsById(user.sub);
+    return this.transactionsService.getAllTransactionsByUserId(user.sub);
   }
 
   @Post('create')
@@ -49,7 +49,7 @@ export class TransactionsController {
   @UseGuards(JwtAuthGuard)
   async createTransaction(
     @Body() createTransaction: CreateTransactionDto,
-    @CurrentUser() user: { sub: number; email: string }
+    @CurrentUser() user: { sub: number; email: string },
   ) {
     const transactionData = { ...createTransaction, userId: user.sub };
     return this.transactionsService.createTransaction(transactionData);
@@ -65,11 +65,11 @@ export class TransactionsController {
   @UseGuards(JwtAuthGuard)
   async createTransfer(
     @Body() createTransferData: CreateTransferDataDto,
-    @CurrentUser() user: { sub: number; email: string }
+    @CurrentUser() user: { sub: number; email: string },
   ) {
     return this.transactionsService.createTransfer(
       createTransferData,
-      user.sub
+      user.sub,
     );
   }
 
@@ -83,11 +83,11 @@ export class TransactionsController {
   @UseGuards(JwtAuthGuard)
   async updateTransaction(
     @Body() updateTransaction: UpdateTransactionDto,
-    @CurrentUser() user: { sub: number; email: string }
+    @CurrentUser() user: { sub: number; email: string },
   ) {
     return this.transactionsService.updateTransaction(
       user.sub,
-      updateTransaction
+      updateTransaction,
     );
   }
 
@@ -101,7 +101,7 @@ export class TransactionsController {
   @UseGuards(JwtAuthGuard)
   async deleteTransaction(
     @Param('id') transactionId: number,
-    @CurrentUser() user: { sub: number; email: string }
+    @CurrentUser() user: { sub: number; email: string },
   ) {
     return this.transactionsService.deleteTransaction(user.sub, transactionId);
   }
