@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  UnauthorizedException,
-  HttpStatus,
-} from '@nestjs/common';
+import { Injectable, Logger, HttpStatus } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service.js';
 import {
   UpdateUserEmailDto,
@@ -16,6 +10,12 @@ import {
   ApiErrorException,
   ErrorCode,
 } from '../../common/exceptions/api-error.exception.js';
+import {
+  validateRequiredId,
+  validateRequiredString,
+} from '../../common/utils/validation.js';
+import { buildSuccessResponse } from '../../common/utils/response.js';
+import { handlePrismaError } from '../../common/utils/prisma-error.js';
 
 @Injectable()
 export class UserService {
@@ -23,27 +23,26 @@ export class UserService {
 
   constructor(private database: DatabaseService) {}
 
-  // update user profile; userId is extracted from token
   async updateUserProfile(userId: number, userData: UpdateUserProfileDto) {
     try {
-      if (!userId || isNaN(userId)) {
-        this.logger.warn('Invalid userId provided');
-        throw new BadRequestException('Invalid userId');
-      }
+      const validUserId = validateRequiredId(
+        userId,
+        'user ID',
+        ErrorCode.INVALID_USER_ID,
+      );
 
-      if (!userData) {
-        this.logger.warn('No user data provided');
-        throw new BadRequestException('User data is not valid');
-      }
-
-      this.logger.debug(`Updating profile for user [ID: ${userId}]`);
+      const validUserName = validateRequiredString(
+        userData.name,
+        'User name',
+        ErrorCode.VALIDATION_ERROR,
+      );
 
       const updatedProfile = await this.database.user.update({
         where: {
-          id: userId,
+          id: validUserId,
         },
         data: {
-          name: userData.name,
+          name: validUserName,
           birthdate: userData.birthdate,
         },
         select: {
@@ -55,49 +54,39 @@ export class UserService {
         },
       });
 
-      this.logger.log(`Profile updated successfully for user [ID: ${userId}]`);
-
-      return {
-        message: 'User profile updated',
-        profile: updatedProfile,
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-
-      if ((error as any)?.code === 'P2025') {
-        this.logger.warn(`User not found [ID: ${userId}]`);
-        throw new BadRequestException('User not found');
-      }
-
-      const errMessage = error instanceof Error ? error.message : String(error);
-      const errStack = error instanceof Error ? error.stack : undefined;
-
-      this.logger.error(
-        `Failed to update user profile [ID: ${userId}]: ${errMessage}`,
-        errStack
+      return buildSuccessResponse(
+        updatedProfile,
+        'User profile updated successfully',
+        HttpStatus.OK,
+        '/user/profile',
       );
-      throw new BadRequestException(`Failed to update user profile`);
+    } catch (error) {
+      if (error instanceof ApiErrorException) throw error;
+
+      handlePrismaError(error, {
+        badRequestCode: ErrorCode.VALIDATION_ERROR,
+        badRequestMessage: 'Invalid data',
+        notFoundCode: ErrorCode.USER_NOT_FOUND,
+        notFoundMessage: 'Invalid user ID',
+        defaultMessage: 'Failed to update user profile',
+      });
     }
   }
 
   async updateUserPassword(
     userId: number,
-    passwordData: UpdateUserPasswordDto
+    passwordData: UpdateUserPasswordDto,
   ) {
     try {
-      if (!userId || isNaN(userId)) {
-        this.logger.warn('Invalid userId provided');
-        throw new BadRequestException('Invalid userId');
-      }
-
-      if (!passwordData) {
-        this.logger.warn('Invalid passwordData');
-        throw new BadRequestException('passwordData is not valid');
-      }
+      const validUserId = validateRequiredId(
+        userId,
+        'user ID',
+        ErrorCode.INVALID_USER_ID,
+      );
 
       const user = await this.database.user.findUnique({
         where: {
-          id: userId,
+          id: validUserId,
         },
         select: {
           passwordHash: true,
@@ -105,27 +94,31 @@ export class UserService {
       });
 
       if (!user) {
-        this.logger.warn('User not found');
-        throw new UnauthorizedException('User not found');
+        throw new ApiErrorException(
+          'User not found',
+          ErrorCode.USER_NOT_FOUND,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       const isPasswordValid = await argon2.verify(
         user.passwordHash,
-        passwordData.oldPassword
+        passwordData.oldPassword,
       );
 
       if (!isPasswordValid) {
-        this.logger.warn(
-          'Failed password update attempt. Invalid old password'
+        throw new ApiErrorException(
+          'Invalid old password',
+          ErrorCode.INVALID_PASSWORD,
+          HttpStatus.BAD_REQUEST,
         );
-        throw new UnauthorizedException('Invalid password');
       }
 
       const newPasswordHash = await argon2.hash(passwordData.newPassword);
 
       const result = await this.database.user.update({
         where: {
-          id: userId,
+          id: validUserId,
         },
         data: {
           passwordHash: newPasswordHash,
@@ -137,55 +130,62 @@ export class UserService {
         },
       });
 
-      return {
-        message: `User ${result.email} updated password`,
-        data: result,
-      };
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof UnauthorizedException
-      ) {
-        throw error;
-      }
-
-      const errMessage = error instanceof Error ? error.message : String(error);
-      const errStack = error instanceof Error ? error.stack : undefined;
-
-      this.logger.error(
-        `Unexpected error updating password: ${errMessage}`,
-        errStack
+      return buildSuccessResponse(
+        result,
+        'Password has been successfully updated',
+        HttpStatus.OK,
+        '/user/password',
       );
-      throw new BadRequestException(`Failed to update user password`);
+    } catch (error) {
+      if (error instanceof ApiErrorException) throw error;
+
+      handlePrismaError(error, {
+        badRequestCode: ErrorCode.VALIDATION_ERROR,
+        badRequestMessage: 'Invalid password',
+        notFoundCode: ErrorCode.USER_NOT_FOUND,
+        notFoundMessage: 'Invalid user ID',
+        defaultMessage: 'Failed to update password',
+      });
     }
   }
 
   async updateUserEmail(userId: number, emailData: UpdateUserEmailDto) {
     try {
-      if (!userId || isNaN(userId)) {
-        this.logger.warn('Invalid userId provided');
-        throw new ApiErrorException(
-          'Invalid user ID',
-          ErrorCode.INVALID_USER_ID,
-          HttpStatus.BAD_REQUEST
-        );
-      }
+      const validUserId = validateRequiredId(
+        userId,
+        'user ID',
+        ErrorCode.INVALID_USER_ID,
+      );
 
-      if (!emailData || !emailData.newEmail) {
-        this.logger.warn('Email data is missing');
+      const validEmail = validateRequiredString(
+        emailData.newEmail,
+        'Email',
+        ErrorCode.INVALID_EMAIL,
+      );
+
+      const existingRecord = await this.database.user.findFirst({
+        where: {
+          email: validEmail,
+        },
+        select: {
+          email: true,
+        },
+      });
+
+      if (existingRecord?.email === validEmail) {
         throw new ApiErrorException(
-          'Email is required',
-          ErrorCode.EMAIL_REQUIRED,
-          HttpStatus.BAD_REQUEST
+          'Email already exists',
+          ErrorCode.DUPLICATE_EMAIL,
+          HttpStatus.CONFLICT,
         );
       }
 
       const updatedEmail = await this.database.user.update({
         where: {
-          id: userId,
+          id: validUserId,
         },
         data: {
-          email: emailData.newEmail,
+          email: validEmail,
         },
         select: {
           id: true,
@@ -194,48 +194,24 @@ export class UserService {
         },
       });
 
-      return {
-        message: 'Email updated successfully',
-        data: updatedEmail,
-        statusCode: 200,
-      };
+      return buildSuccessResponse(
+        updatedEmail,
+        'Email has been successfully updated',
+        HttpStatus.OK,
+        '/user/email',
+      );
     } catch (error) {
-      if (error instanceof ApiErrorException) {
-        throw error;
-      }
+      if (error instanceof ApiErrorException) throw error;
 
-      const err = error as any;
-
-      if (err?.code === 'P2025') {
-        this.logger.warn(`User not found [ID: ${userId}]`);
-        throw new ApiErrorException(
-          'User not found',
-          ErrorCode.USER_NOT_FOUND,
-          HttpStatus.NOT_FOUND
-        );
-      }
-
-      if (err?.code === 'P2002') {
-        this.logger.warn(`Email already exists: ${emailData.newEmail}`);
-        throw new ApiErrorException(
-          'Email is already in use. Please use a different email.',
-          ErrorCode.DUPLICATE_EMAIL,
-          HttpStatus.CONFLICT
-        );
-      }
-
-      const errMessage = err instanceof Error ? err.message : String(err);
-      const errStack = err instanceof Error ? err.stack : undefined;
-
-      this.logger.error(
-        `Failed to update email for user [ID: ${userId}]: ${errMessage}`,
-        errStack
-      );
-      throw new ApiErrorException(
-        'Failed to update email. Please try again later.',
-        ErrorCode.DATABASE_ERROR,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      handlePrismaError(error, {
+        conflictCode: ErrorCode.DUPLICATE_EMAIL,
+        conflictMessage: 'Email already exists',
+        badRequestCode: ErrorCode.VALIDATION_ERROR,
+        badRequestMessage: 'Invalid user ID',
+        notFoundCode: ErrorCode.USER_NOT_FOUND,
+        notFoundMessage: 'Invalid user ID',
+        defaultMessage: 'Failed to update email',
+      });
     }
   }
 }
