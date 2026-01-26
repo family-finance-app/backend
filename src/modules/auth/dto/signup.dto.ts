@@ -9,16 +9,16 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SignUpDto {
-  @ApiProperty()
+  @ApiProperty({ required: true })
   @IsEmail()
   @IsString()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: true })
   @IsString()
-  @MinLength(8)
   @IsNotEmpty()
+  @MinLength(8, { message: 'New password must contain at least 8 characters' })
   password: string;
 
   @ApiProperty()
