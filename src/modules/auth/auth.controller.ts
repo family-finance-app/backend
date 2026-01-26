@@ -104,7 +104,7 @@ export class AuthController {
     const result = await this.authService.login(loginDto);
 
     const payload = { sub: result.data.id, email: result.data.email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '30m' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '3m' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     setCookie(res as Response, 'refresh_token', refreshToken, {
