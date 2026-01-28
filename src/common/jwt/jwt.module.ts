@@ -2,7 +2,10 @@ import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import type { StringValue } from 'ms';
 
-const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
+const jwtSecret = process.env.JWT_SECRET?.trim();
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET is required and must be non-empty');
+}
 const jwtIssuer = process.env.JWT_ISSUER;
 const jwtAudience = process.env.JWT_AUDIENCE;
 const clockTolerance = Number(process.env.JWT_CLOCK_TOLERANCE || 10);
