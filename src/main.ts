@@ -8,23 +8,6 @@ import { buildGlobalValidationPipe } from './common/pipes/global-validation.pipe
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // app.enableCors({
-  //   origin: (origin, callback) => {
-  //     const allowedOrigins = [
-  //       'https://dev.familyfinance.site',
-  //       'https://familyfinance.site',
-  //     ];
-  //     if (!origin || allowedOrigins.includes(origin)) {
-  //       callback(null, true);
-  //     } else {
-  //       callback(new Error('Not allowed by CORS'), false);
-  //     }
-  //   },
-  //   credentials: true,
-  //   allowedHeaders: ['Cookie', 'Authorization', 'Content-Type', 'Accept'],
-  //   methods: 'GET,POST,PUT,DELETE,OPTIONS',
-  // });
-
   const config = new DocumentBuilder()
     .setTitle('Family Finance API')
     .setDescription('API docs for the backend services')

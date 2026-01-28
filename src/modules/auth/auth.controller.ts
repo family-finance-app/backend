@@ -146,7 +146,7 @@ export class AuthController {
         HttpStatus.UNAUTHORIZED,
       );
 
-    let payload: { sub: string; email: string };
+    let payload: { sub: number | string; email: string };
     try {
       payload = this.jwtService.verify(refreshToken);
     } catch {
@@ -157,12 +157,22 @@ export class AuthController {
       );
     }
 
+    const userId =
+      typeof payload.sub === 'string' ? Number(payload.sub) : payload.sub;
+    if (!userId || Number.isNaN(userId)) {
+      throw new ApiErrorException(
+        'Invalid refresh token payload',
+        ErrorCode.REFRESH_TOKEN_INVALID,
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     const newAccess = this.jwtService.sign(
-      { sub: payload.sub, email: payload.email },
+      { sub: userId, email: payload.email },
       { expiresIn: '3m' },
     );
     const newRefresh = this.jwtService.sign(
-      { sub: payload.sub, email: payload.email },
+      { sub: userId, email: payload.email },
       { expiresIn: '7d' },
     );
 
