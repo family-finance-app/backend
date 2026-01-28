@@ -3,8 +3,8 @@ import { JwtModule } from '@nestjs/jwt';
 import type { StringValue } from 'ms';
 
 const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
-const jwtIssuer = process.env.JWT_ISSUER || undefined;
-const jwtAudience = process.env.JWT_AUDIENCE || undefined;
+const jwtIssuer = process.env.JWT_ISSUER;
+const jwtAudience = process.env.JWT_AUDIENCE;
 const clockTolerance = Number(process.env.JWT_CLOCK_TOLERANCE || 10);
 const accessTtl = (process.env.JWT_EXPIRES_IN as StringValue) || '3m';
 
@@ -16,12 +16,12 @@ const accessTtl = (process.env.JWT_EXPIRES_IN as StringValue) || '3m';
       secret: jwtSecret,
       signOptions: {
         expiresIn: accessTtl,
-        issuer: jwtIssuer,
-        audience: jwtAudience,
+        ...(jwtIssuer ? { issuer: jwtIssuer } : {}),
+        ...(jwtAudience ? { audience: jwtAudience } : {}),
       },
       verifyOptions: {
-        issuer: jwtIssuer,
-        audience: jwtAudience,
+        ...(jwtIssuer ? { issuer: jwtIssuer } : {}),
+        ...(jwtAudience ? { audience: jwtAudience } : {}),
         clockTolerance,
       },
     }),
