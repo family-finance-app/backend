@@ -12,10 +12,12 @@ import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { TerminusModule } from '@nestjs/terminus';
 import { RedisHealthModule } from '@songkeys/nestjs-redis-health';
 import { HealthModule } from './modules/health/health.module.js';
+import { JwtConfigModule } from './common/jwt/jwt.module.js';
 
 @Module({
   imports: [
     DatabaseModule,
+    JwtConfigModule,
     AuthModule,
     AccountsModule,
     TransactionsModule,

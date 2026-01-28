@@ -80,9 +80,17 @@ export class UserController {
     setCookie(res as Response, 'refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    setCookie(res as Response, 'access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 15,
     });
 
     return buildSuccessResponse(
@@ -121,9 +129,17 @@ export class UserController {
     setCookie(res as Response, 'refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    setCookie(res as Response, 'access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 15,
     });
 
     return buildSuccessResponse(

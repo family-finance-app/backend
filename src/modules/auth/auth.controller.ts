@@ -75,6 +75,14 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
+    setCookie(res as Response, 'access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 3,
+    });
+
     return buildSuccessResponse(
       {
         user: result.data,
@@ -113,6 +121,14 @@ export class AuthController {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    setCookie(res as Response, 'access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 3,
     });
 
     return buildSuccessResponse(
@@ -184,6 +200,14 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
+    setCookie(res as Response, 'access_token', newAccess, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 3,
+    });
+
     return buildSuccessResponse(
       {
         accessToken: newAccess,
@@ -202,6 +226,7 @@ export class AuthController {
   })
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token', { path: '/' });
+    res.clearCookie('access_token', { path: '/' });
     return buildSuccessResponse(
       null,
       'Logout successful',
