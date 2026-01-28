@@ -27,6 +27,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { buildSuccessResponse } from '../../common/utils/response.js';
+import type { StringValue } from 'ms';
 
 @ApiUnauthorizedResponse({
   description: 'Unauthorized - Invalid or missing JWT token',
@@ -72,10 +73,14 @@ export class UserController {
     );
 
     const payload = { sub: result.data.id, email: result.data.email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: '7d',
-    });
+    const accessToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('15m'),
+    );
+    const refreshToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('7d'),
+    );
 
     setCookie(res as Response, 'refresh_token', refreshToken, {
       httpOnly: true,
@@ -121,10 +126,14 @@ export class UserController {
     const result = await this.userService.updateUserEmail(user.sub, email);
 
     const payload = { sub: result.data.id, email: result.data.email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: '7d',
-    });
+    const accessToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('15m'),
+    );
+    const refreshToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('7d'),
+    );
 
     setCookie(res as Response, 'refresh_token', refreshToken, {
       httpOnly: true,
@@ -152,5 +161,16 @@ export class UserController {
       HttpStatus.OK,
       '/user/email',
     );
+  }
+
+  private buildSignOptions(expiresIn: StringValue) {
+    const issuer = process.env.JWT_ISSUER;
+    const audience = process.env.JWT_AUDIENCE;
+
+    return {
+      expiresIn,
+      ...(issuer ? { issuer } : {}),
+      ...(audience ? { audience } : {}),
+    };
   }
 }

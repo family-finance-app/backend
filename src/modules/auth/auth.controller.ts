@@ -28,6 +28,7 @@ import {
   ErrorCode,
 } from '../../common/exceptions/api-error.exception.js';
 import { Throttle } from '@nestjs/throttler';
+import type { StringValue } from 'ms';
 
 @Controller('auth')
 export class AuthController {
@@ -64,8 +65,14 @@ export class AuthController {
     const result = await this.authService.signup(signupDto);
 
     const payload = { sub: result.data.id, email: result.data.email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '3m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('3m'),
+    );
+    const refreshToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('7d'),
+    );
 
     setCookie(res as Response, 'refresh_token', refreshToken, {
       httpOnly: true,
@@ -112,8 +119,14 @@ export class AuthController {
     const result = await this.authService.login(loginDto);
 
     const payload = { sub: result.data.id, email: result.data.email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '3m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const accessToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('3m'),
+    );
+    const refreshToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('7d'),
+    );
 
     setCookie(res as Response, 'refresh_token', refreshToken, {
       httpOnly: true,
@@ -185,11 +198,11 @@ export class AuthController {
 
     const newAccess = this.jwtService.sign(
       { sub: userId, email: payload.email },
-      { expiresIn: '3m' },
+      this.buildSignOptions('3m'),
     );
     const newRefresh = this.jwtService.sign(
       { sub: userId, email: payload.email },
-      { expiresIn: '7d' },
+      this.buildSignOptions('7d'),
     );
 
     setCookie(res as Response, 'refresh_token', newRefresh, {
@@ -233,5 +246,16 @@ export class AuthController {
       HttpStatus.OK,
       '/auth/logout',
     );
+  }
+
+  private buildSignOptions(expiresIn: StringValue) {
+    const issuer = process.env.JWT_ISSUER;
+    const audience = process.env.JWT_AUDIENCE;
+
+    return {
+      expiresIn,
+      ...(issuer ? { issuer } : {}),
+      ...(audience ? { audience } : {}),
+    };
   }
 }
