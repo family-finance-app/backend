@@ -7,6 +7,8 @@ import { buildGlobalValidationPipe } from './common/pipes/global-validation.pipe
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const port = process.env.PORT || 3000;
+  const nodeEnv = process.env.NODE_ENV || 'development';
 
   const config = new DocumentBuilder()
     .setTitle('Family Finance API')
@@ -37,9 +39,6 @@ async function bootstrap() {
   app.useGlobalPipes(buildGlobalValidationPipe());
 
   app.useGlobalFilters(new ApiHttpExceptionFilter());
-
-  const port = process.env.PORT || 3000;
-  const nodeEnv = process.env.NODE_ENV || 'development';
 
   await app.listen(port);
 

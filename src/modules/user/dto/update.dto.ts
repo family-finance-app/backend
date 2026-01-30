@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
   Validate,
@@ -15,15 +16,14 @@ export class UpdateUserProfileDto {
   @IsString()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
-  birthdate: string;
+  birthdate?: string;
 }
 
 @ValidatorConstraint({ name: 'passwordsDontMatch', async: false })
-export class PasswordsDontMatchConstraint
-  implements ValidatorConstraintInterface
-{
+export class PasswordsDontMatchConstraint implements ValidatorConstraintInterface {
   validate(value: any, validationArguments: ValidationArguments): boolean {
     const [relatedPropertyName] = validationArguments.constraints;
     const relatedValue = (validationArguments.object as any)[

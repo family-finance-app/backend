@@ -67,7 +67,7 @@ export class AuthController {
     const payload = { sub: result.data.id, email: result.data.email };
     const accessToken = this.jwtService.sign(
       payload,
-      this.buildSignOptions('3m'),
+      this.buildSignOptions('30m'),
     );
     const refreshToken = this.jwtService.sign(
       payload,
@@ -121,7 +121,7 @@ export class AuthController {
     const payload = { sub: result.data.id, email: result.data.email };
     const accessToken = this.jwtService.sign(
       payload,
-      this.buildSignOptions('3m'),
+      this.buildSignOptions('30m'),
     );
     const refreshToken = this.jwtService.sign(
       payload,

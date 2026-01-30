@@ -43,7 +43,7 @@ export class UserService {
         },
         data: {
           name: validUserName,
-          birthdate: userData.birthdate,
+          birthdate: userData.birthdate ? userData.birthdate : null,
         },
         select: {
           id: true,

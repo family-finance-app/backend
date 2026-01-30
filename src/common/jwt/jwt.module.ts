@@ -9,7 +9,7 @@ if (!jwtSecret) {
 const jwtIssuer = process.env.JWT_ISSUER;
 const jwtAudience = process.env.JWT_AUDIENCE;
 const clockTolerance = Number(process.env.JWT_CLOCK_TOLERANCE || 10);
-const accessTtl = (process.env.JWT_EXPIRES_IN as StringValue) || '3m';
+const accessTtl = (process.env.JWT_EXPIRES_IN as StringValue) || '30m';
 
 @Global()
 @Module({
