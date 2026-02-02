@@ -9,6 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const port = process.env.PORT || 3000;
   const nodeEnv = process.env.NODE_ENV || 'development';
+  const FRONTEND_URL = process.env.FRONTEND_URL;
 
   const config = new DocumentBuilder()
     .setTitle('Family Finance API')
@@ -33,6 +34,13 @@ async function bootstrap() {
   SwaggerModule.setup('/docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
   });
+
+  // Enable CORS for browser clients if running without nginx
+
+  // app.enableCors({
+  //   origin: [FRONTEND_URL],
+  //   credentials: true,
+  // });
 
   app.use(cookieParser());
 

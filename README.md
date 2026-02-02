@@ -1,149 +1,134 @@
 # Family Finance Backend
 
-Monolithic NestJS 11 backend for the Family Finance platform. The service exposes authentication, account, transaction, category, and user APIs backed by PostgreSQL through Prisma. The application can run locally, inside Docker, or as a production container that serves compiled TypeScript.
+Monolithic NestJS backend for the Family Finance platform. The service exposes authentication, account, transaction, category, and user APIs backed by PostgreSQL via Prisma, with Redis for caching and health checks. The application can run locally, inside Docker, or as a production container that serves compiled TypeScript.
 
 ## Hosted Environments
 
 - Development API: [https://api-dev.familyfinance.site](https://api-dev.familyfinance.site)
 - Production API: [https://api.familyfinance.site](https://api.familyfinance.site)
 
-## Features
+## Architecture
 
-- JWT authentication with httpOnly refresh cookies and access tokens returned in the response body
-- Prisma ORM with generated client code checked into `prisma/generated`
-- Global validation pipeline, cookie parsing, and modular NestJS architecture
-- Docker multi-stage image and docker-compose stack
-- GitHub Actions workflows for development and production deployment
-- Swagger/OpenAPI documentation at `/api` endpoint
-- Health checks for database and Redis connectivity
-- Support for account transfers between user accounts
-- Multiple account types (Debit, Credit, Cash, Bank, Investment, Deposit, Digital, Savings)
-- Multi-currency support (UAH, USD, EUR)
-- Transaction categories with icons and colors
+### High-level topology
 
-## Technology Stack
+Clients (web/mobile) can talk directly to the backend in local setups, or through the API gateway in production-style deployments.
 
-| Layer         | Tools                                                   |
-| ------------- | ------------------------------------------------------- |
-| Runtime       | Node.js 22, TypeScript 5.9                              |
-| Framework     | NestJS 11, class-validator, class-transformer           |
-| Database      | PostgreSQL, Prisma 7 ORM, @prisma/adapter-pg            |
-| Cache         | Redis 7 (ioredis client)                                |
-| Auth/Security | @nestjs/jwt, Argon2, cookie-parser                      |
-| API Docs      | @nestjs/swagger, swagger-ui-express                     |
-| Health Checks | @nestjs/terminus, @songkeys/nestjs-redis-health         |
-| Container     | Docker, docker-compose                                  |
-| Observability | prom-client, Prometheus scraping, Grafana visualization |
+```
+Clients
+   │
+   ├── Direct (local): HTTP → Backend → PostgreSQL / Redis
+   │
+   └── Full stack: HTTP(S) → API Gateway (proxy, TLS, routing) → Backend → PostgreSQL / Redis
+```
+
+### NestJS modular structure
+
+- **Controllers** expose HTTP endpoints, apply guards, and validate DTOs.
+- **Services** hold business logic and data access orchestration.
+- **DatabaseService** wraps PrismaClient with the Postgres adapter for efficient pooling.
+- **Common utilities** provide validation helpers, cookie parsing, and shared exceptions.
+
+### Persistence layer (Prisma + PostgreSQL)
+
+- Models live in `prisma/schema.prisma` and are versioned through migrations.
+- Generated client code is committed under `prisma/generated` for consistent builds.
+- Migrations are applied via `prisma migrate dev` (development) or `prisma migrate deploy` (production).
+
+### Caching and health checks
+
+- Redis is used for connectivity checks and future caching extensions.
+- `/health` verifies PostgreSQL and Redis readiness.
+
+### Observability
+
+- Prometheus metrics are exposed at `GET /metrics` using `prom-client`.
+- Swagger/OpenAPI is available at `/api` in all environments.
+
+## Functional Scope
+
+- User authentication with refresh tokens in httpOnly cookies and access tokens in JSON
+- Account management (create/update/delete) with multiple account types
+- Transaction management (income, expense, transfer)
+- Categories (icons, colors) and user profile updates
+- Health and metrics endpoints for production monitoring
+
+## Data Model Overview
+
+Key entities:
+
+- **User**: credentials, profile, and account ownership
+- **Account**: balance, type, currency, belongs to a user
+- **Transaction**: income/expense/transfer entries tied to accounts
+- **Category**: metadata for transaction classification
+- **Group / UserGroup**: user grouping (team/family scenarios)
+- **Goal**: savings/targets
+- **Notification**: user notifications
+
+Supported enums:
+
+- `AccountType`: DEBIT, CREDIT, CASH, BANK, INVESTMENT, DEPOSIT, DIGITAL, SAVINGS
+- `CurrencyType`: UAH, USD, EUR
+- `TransactionType`: EXPENSE, INCOME, TRANSFER
+
+## Technology Stack & Dependencies
+
+### Runtime dependencies
+
+- **NestJS 11**: `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express`
+- **Validation**: `class-validator`, `class-transformer`
+- **Auth**: `@nestjs/jwt`, `argon2`, `cookie-parser`
+- **Database**: `pg`, `@prisma/adapter-pg`, Prisma client
+- **Caching**: `ioredis`
+- **Docs**: `@nestjs/swagger`, `swagger-ui-express`
+- **Health**: `@nestjs/terminus`, `@songkeys/nestjs-redis-health`
+- **Metrics**: `prom-client`
+
+### Development dependencies
+
+- **Prisma**: `prisma`, `@prisma/client`
+- **TypeScript**: `typescript`, `ts-node`, `tsx`
+- **Types**: `@types/node`, `@types/express`
 
 ## Project Layout
 
 ```
 .
 ├── src/
-│   ├── main.ts                 # Bootstrap file
+│   ├── main.ts
 │   ├── app.{controller,service,module}.ts
-│   ├── common/                 # Shared utilities and exceptions
-│   │   ├── exceptions/         # Custom API exceptions
-│   │   └── utils/              # Cookie, validation helpers
-│   ├── database/               # Prisma service wrapper
-│   ├── lib/redis.ts            # Redis client configuration
+│   ├── common/
+│   │   ├── exceptions/
+│   │   ├── filters/
+│   │   ├── jwt/
+│   │   ├── pipes/
+│   │   └── utils/
+│   ├── database/
+│   ├── lib/redis.ts
 │   └── modules/
-│       ├── auth/               # Authentication (signup, login, refresh, logout)
-│       ├── accounts/           # Financial accounts management
-│       ├── transactions/       # Income, expense, and transfer transactions
-│       ├── categories/         # Transaction categories
-│       ├── health/             # Health check endpoint (database + Redis)
-│       ├── metrics/            # Prometheus exposition endpoint
-│       └── user/               # User profile management
+│       ├── auth/
+│       ├── accounts/
+│       ├── transactions/
+│       ├── categories/
+│       ├── currency/
+│       ├── health/
+│       ├── metrics/
+│       └── user/
 ├── prisma/
 │   ├── schema.prisma
 │   ├── migrations/
 │   ├── seed.ts
 │   └── generated/
 ├── docs/
+├── docker-compose.yml
+├── docker-compose.local.yml
 ├── Dockerfile
-├── docker-compose.yml          # Backend
-├── package.json
-├── tsconfig.json               # Root config (rootDir set to .)
-├── tsconfig.build.json         # Emission into dist/src
+├── prisma.config.ts
 └── README.md
 ```
 
-## Requirements
+## Environment Configuration
 
-- Node.js 22+
-- npm 10+
-- PostgreSQL database accessible from the backend
-- Redis 7+ if you want to exercise caching outside of docker-compose
-
-## Local Development Workflow
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Provision environment variables
-cp .env.example .env.local
-# Populate DATABASE_URL_DEV, REDIS_HOST, REDIS_PORT, JWT_SECRET, etc.
-
-# 3. Generate Prisma client
-npm run generate
-
-# 4. Apply migrations against the dev database
-npm run migrate
-
-# 5. (Optional) seed baseline data
-npm run seed
-
-# 6. Start the API with development settings
-npm run dev:env
-# The server listens on http://localhost:3000 by default
-```
-
-`npm run dev` launches the same application without forcing `NODE_ENV=development`, which is useful for running ad-hoc scripts.
-
-## Docker Workflows
-
-### Local Docker Stack
-
-```bash
-# Build the development-oriented compose stack (backend + redis)
-docker compose -f docker-compose.local.yml up --build
-
-# Follow API logs
-docker logs backend_local
-
-# Follow Redis logs
-docker logs redis_local
-
-# Tear down when finished
-docker compose -f docker-compose.local.yml down
-```
-
-### Production-style Container
-
-```bash
-# Build the production image
-docker build -t family-finance-backend .
-
-# Or run the packaged stack (backend + redis)
-docker compose up --build -d
-
-# Apply migrations inside the running backend container
-docker exec backend npm run migrate:prod
-
-# Inspect health endpoint
-curl http://localhost:3000/health
-
-# Stop services
-docker compose down
-```
-
-The Dockerfile uses a builder stage for TypeScript compilation and a slim runtime stage that executes `node dist/src/main.js`.
-
-## Environment Variables
-
-`prisma.config.ts` automatically selects the correct database URL based on `NODE_ENV`. Minimum variables are listed below.
+`prisma.config.ts` selects the correct database URL based on `NODE_ENV`. Use `.env.example` as a template.
 
 | Variable                 | Description                                  |
 | ------------------------ | -------------------------------------------- |
@@ -156,6 +141,57 @@ The Dockerfile uses a builder stage for TypeScript compilation and a slim runtim
 | `REDIS_HOST`             | Redis host name or IP                        |
 | `REDIS_PORT`             | Redis port number                            |
 | `REDIS_PASSWORD`         | Redis password (optional)                    |
+| `POSTGRES_DB`            | PostgreSQL database name                     |
+| `POSTGRES_USER`          | PostgreSQL user name                         |
+| `POSTGRES_PASSWORD`      | PostgreSQL password                          |
+
+## How to Run
+
+### Option A — Docker: backend + PostgreSQL + Redis (no nginx)
+
+This is the simplest full containerized stack without a proxy.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Useful commands:
+
+```bash
+# Apply migrations inside the backend container
+docker exec backend npm run migrate:prod
+
+# Check health
+curl http://localhost:3000/health
+```
+
+### Option B — Local backend only (npm start)
+
+This runs the compiled backend locally; PostgreSQL and Redis must be available outside of Docker.
+
+```bash
+npm install
+cp .env.example .env
+npm run build
+npm start
+```
+
+### Option C — Full server with database + proxy (API Gateway)
+
+For a production-like setup with TLS/proxy routing, use the API Gateway repository:
+
+https://github.com/family-finance-app/api-gateway
+
+Follow the gateway instructions to start the proxy and supporting services, then ensure the backend is reachable from the gateway network. This provides a fully functional server with a proxy layer in front of the backend.
+
+### Optional: Local Docker dev stack (hot reload)
+
+`docker-compose.local.yml` runs the backend with live-reload and Redis, but does **not** provision PostgreSQL. Use it if you already have a Postgres instance available locally.
+
+```bash
+docker compose -f docker-compose.local.yml up --build
+```
 
 ## NPM Scripts
 
@@ -173,56 +209,33 @@ The Dockerfile uses a builder stage for TypeScript compilation and a slim runtim
 | `npm run studio`       | Open Prisma Studio                                  |
 | `npm run seed`         | Run `tsx prisma/seed.ts`                            |
 
-## Database and Prisma
-
-- Schema definitions are in `prisma/schema.prisma` with dedicated models for users, groups, accounts, transactions, categories, goals, and notifications.
-- Supported enums:
-  - `AccountType`: DEBIT, CREDIT, CASH, BANK, INVESTMENT, DEPOSIT, DIGITAL, SAVINGS
-  - `CurrencyType`: UAH, USD, EUR
-  - `TransactionType`: EXPENSE, INCOME, TRANSFER
-- Generated client code lives inside `prisma/generated` and is imported through path aliases (for example `../../prisma/generated/client`).
-- Development migrations run with `npm run migrate`; production deployments use `npm run migrate:prod` to avoid accidental schema drift.
-- The `DatabaseService` wraps PrismaClient with `PrismaPg` to leverage the native Node PostgreSQL driver.
-- Cascade deletion is configured for transactions when their parent account is deleted.
-
-## Redis Caching
-
-- `src/lib/redis.ts` bootstraps a shared Redis client. The docker-compose stack already provides a Redis service named `redis` on port 6379.
-
-## Metrics Gathering
-
-- The backend exposes Prometheus-compatible metrics at `GET /metrics`.
-- `MetricsService` uses `prom-client` to collect default Node.js runtime metrics including process CPU usage, memory consumption, event loop lag, and garbage collection statistics.
-- The metrics endpoint returns data in Prometheus text exposition format, suitable for ingestion by monitoring systems like Prometheus, Grafana, or Datadog.
-- Default metrics are automatically registered on module initialization and updated continuously in the background.
-
 ## API Surface
 
 Swagger documentation is available at `/api` when the server is running.
 
-| Domain       | Endpoint                          | Description                                                      |
-| ------------ | --------------------------------- | ---------------------------------------------------------------- |
-| Health       | `GET /health`                     | Health check for database and Redis (internal, blocked by nginx) |
-| Metrics      | `GET /metrics`                    | Prometheus-compatible runtime metrics                            |
-| Auth         | `GET /auth/me`                    | Return authenticated user profile                                |
-|              | `POST /auth/signup`               | Register a new user                                              |
-|              | `POST /auth/login`                | Issue access and refresh tokens                                  |
-|              | `POST /auth/refresh`              | Rotate access token using refresh cookie                         |
-|              | `POST /auth/logout`               | Revoke refresh token cookie                                      |
-| Accounts     | `GET /accounts/my`                | List accounts belonging to the authenticated user                |
-|              | `GET /accounts/user/:userId`      | Get accounts for a specific user (own accounts only)             |
-|              | `POST /accounts/create`           | Create an account scoped to the current user                     |
-|              | `PUT /accounts/:accountId`        | Update account metadata                                          |
-|              | `DELETE /accounts/:accountId`     | Remove an account and associated transactions                    |
-| Transactions | `GET /transactions/all`           | List all transactions for authenticated user                     |
-|              | `POST /transactions/create`       | Create an income or expense transaction                          |
-|              | `POST /transactions/transfer`     | Create a transfer between two accounts                           |
-|              | `PUT /transactions/update`        | Update a transaction                                             |
-|              | `DELETE /transactions/delete/:id` | Remove a transaction                                             |
-| Categories   | `GET /categories`                 | List all transaction categories                                  |
-| User         | `PUT /user/profile`               | Update user profile (name, birthdate)                            |
-|              | `PUT /user/password`              | Change user password                                             |
-|              | `PUT /user/email`                 | Change user email address                                        |
+| Domain       | Endpoint                          | Description                                          |
+| ------------ | --------------------------------- | ---------------------------------------------------- |
+| Health       | `GET /health`                     | Health check for database and Redis                  |
+| Metrics      | `GET /metrics`                    | Prometheus-compatible runtime metrics                |
+| Auth         | `GET /auth/me`                    | Return authenticated user profile                    |
+|              | `POST /auth/signup`               | Register a new user                                  |
+|              | `POST /auth/login`                | Issue access and refresh tokens                      |
+|              | `POST /auth/refresh`              | Rotate access token using refresh cookie             |
+|              | `POST /auth/logout`               | Revoke refresh token cookie                          |
+| Accounts     | `GET /accounts/my`                | List accounts belonging to the authenticated user    |
+|              | `GET /accounts/user/:userId`      | Get accounts for a specific user (own accounts only) |
+|              | `POST /accounts/create`           | Create an account scoped to the current user         |
+|              | `PUT /accounts/:accountId`        | Update account metadata                              |
+|              | `DELETE /accounts/:accountId`     | Remove an account and associated transactions        |
+| Transactions | `GET /transactions/all`           | List all transactions for authenticated user         |
+|              | `POST /transactions/create`       | Create an income or expense transaction              |
+|              | `POST /transactions/transfer`     | Create a transfer between two accounts               |
+|              | `PUT /transactions/update`        | Update a transaction                                 |
+|              | `DELETE /transactions/delete/:id` | Remove a transaction                                 |
+| Categories   | `GET /categories`                 | List all transaction categories                      |
+| User         | `PUT /user/profile`               | Update user profile (name, birthdate)                |
+|              | `PUT /user/password`              | Change user password                                 |
+|              | `PUT /user/email`                 | Change user email address                            |
 
 Controllers enforce JWT authentication via `JwtAuthGuard`, use DTO validation, and rely on Prisma for persistence logic.
 
@@ -240,15 +253,15 @@ Controllers enforce JWT authentication via `JwtAuthGuard`, use DTO validation, a
 | ---------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `TypeError: Cannot read properties of undefined (reading 'getHealth')` | Running the app with a loader that strips decorator metadata | Use the provided npm scripts (`npm run dev` or `npm start`) so Nest receives the emitted metadata                                            |
 | `Invalid URL: redis://undefined:undefined`                             | `REDIS_HOST` or `REDIS_PORT` missing                         | Ensure the environment file defines both variables or set them when starting docker-compose                                                  |
-| `Connection reset by peer` when curling `localhost:3000`               | Container crashed, not listening, or mismatched HTTP/HTTPS   | Inspect `docker compose logs backend-redis`, confirm the service listens on port 3000 inside the container, and verify you are using HTTP    |
+| `Connection reset by peer` when curling `localhost:3000`               | Container crashed, not listening, or mismatched HTTP/HTTPS   | Inspect `docker compose logs backend`, confirm the service listens on port 3000 inside the container, and verify you are using HTTP          |
 | `TS6059: File ... is not under rootDir`                                | Generated Prisma client excluded from TypeScript build       | `tsconfig.build.json` already sets `rootDir` to `.` and includes `prisma/generated/**/*.ts`; ensure you have pulled the latest configuration |
 
-## Contributing
+## Contributing & Maintenance
 
 1. Branch from `develop`.
 2. Keep module boundaries clean (controllers remain thin, services hold business logic).
 3. Run `npm run build` and any relevant tests before opening a pull request.
-4. Describe API changes in the PR description and update docs where necessary.
+4. Update this documentation when changing APIs, environment variables, or deploy flows.
 
 ## License
 
