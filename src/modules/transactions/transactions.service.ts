@@ -1,10 +1,18 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { TransactionType } from '@prisma/client';
+import { Injectable, Logger, HttpStatus } from '@nestjs/common';
+import { CurrencyType, TransactionType } from '@prisma/client';
 import { DatabaseService } from '../../database/database.service.js';
 import { CreateTransactionDto } from './dto/create-tr.dto.js';
 import { UpdateTransactionDto } from './dto/update-tr.dto.js';
 import { CreateTransferDataDto } from './dto/transfer.dto.js';
 import { validateTransfer } from '../../common/utils/validateTransfer.js';
+import { ExchangeRateService } from '../currency/exchange-rate.service.js';
+import { validateRequiredId } from '../../common/utils/validation.js';
+import {
+  ApiErrorException,
+  ErrorCode,
+} from '../../common/exceptions/api-error.exception.js';
+import { buildSuccessResponse } from '../../common/utils/response.js';
+import { handlePrismaError } from '../../common/utils/prisma-error.js';
 
 type InternalCreateTransaction = CreateTransactionDto & {
   userId: number;
@@ -14,12 +22,17 @@ type InternalCreateTransaction = CreateTransactionDto & {
 @Injectable()
 export class TransactionsService {
   private readonly logger = new Logger(TransactionsService.name);
-  constructor(private database: DatabaseService) {}
+  constructor(
+    private database: DatabaseService,
+    private exchangeRateService: ExchangeRateService,
+  ) {}
 
   async createTransaction(transactionData: InternalCreateTransaction) {
-    if (!transactionData.userId) {
-      throw new BadRequestException('userId is required');
-    }
+    const validUserId = validateRequiredId(
+      transactionData.userId,
+      'user ID',
+      ErrorCode.INVALID_USER_ID,
+    );
 
     try {
       const created = await this.database.$transaction(async (tx) => {
@@ -29,7 +42,7 @@ export class TransactionsService {
             description: transactionData.description ?? undefined,
             currency: transactionData.currency,
             account: { connect: { id: transactionData.accountId } },
-            user: { connect: { id: transactionData.userId } },
+            user: { connect: { id: validUserId } },
             group: transactionData.groupId
               ? { connect: { id: transactionData.groupId } }
               : undefined,
@@ -47,6 +60,7 @@ export class TransactionsService {
             description: true,
             date: true,
             type: true,
+            createdAt: true,
           },
         });
 
@@ -60,46 +74,66 @@ export class TransactionsService {
             where: { id: transactionData.accountId },
             data: { balance: { decrement: transactionData.amount } },
           });
-        } else if (transactionData.type === TransactionType.TRANSFER) {
-          // logics needs to be implemented
-          throw new BadRequestException(
-            'Use transfer endpoint to move funds between accounts'
-          );
         }
 
         return tr;
       });
 
-      return {
-        message: 'Transaction has been successfully created',
-        transaction: created,
-        status: 'success',
-        statusCode: 201,
-      };
+      return buildSuccessResponse(
+        created,
+        'Transaction has been successfully created',
+        HttpStatus.CREATED,
+        '/transactions/create',
+      );
     } catch (error) {
-      console.log(error);
-      throw error;
+      if (error instanceof ApiErrorException) throw error;
+
+      handlePrismaError(error, {
+        badRequestCode: ErrorCode.VALIDATION_ERROR,
+        badRequestMessage: 'Invalid related record',
+        notFoundCode: ErrorCode.ACCOUNT_NOT_FOUND,
+        notFoundMessage: 'Related record not found',
+        defaultMessage: 'Failed to create new transaction',
+      });
     }
   }
 
   async updateTransaction(
     userId: number,
-    transactionData: UpdateTransactionDto
+    transactionData: UpdateTransactionDto,
   ) {
     try {
+      const validUserId = validateRequiredId(
+        userId,
+        'user ID',
+        ErrorCode.INVALID_USER_ID,
+      );
+
+      const validTransactionId = validateRequiredId(
+        transactionData.id,
+        'transaction ID',
+        ErrorCode.VALIDATION_ERROR,
+      );
+
       const existingTransaction = await this.database.transaction.findUnique({
         where: {
-          id: transactionData.id,
+          id: validTransactionId,
         },
       });
 
       if (!existingTransaction) {
-        throw new BadRequestException('Transaction not found');
+        throw new ApiErrorException(
+          'Transaction not found',
+          ErrorCode.TRANSACTION_NOT_FOUND,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
-      if (existingTransaction.userId !== userId) {
-        throw new BadRequestException(
-          'You do not have permission to update this transaction'
+      if (existingTransaction.userId !== validUserId) {
+        throw new ApiErrorException(
+          'You do not have an access to this record',
+          ErrorCode.UNAUTHORIZED,
+          HttpStatus.UNAUTHORIZED,
         );
       }
 
@@ -117,7 +151,7 @@ export class TransactionsService {
         }
 
         const tr = await tx.transaction.update({
-          where: { id: transactionData.id },
+          where: { id: validTransactionId },
           data: {
             amount: transactionData.amount,
             description: transactionData.description ?? undefined,
@@ -134,39 +168,77 @@ export class TransactionsService {
             description: true,
             date: true,
             type: true,
+            updatedAt: true,
           },
         });
+
+        if (existingTransaction.type === TransactionType.INCOME) {
+          await tx.account.update({
+            where: { id: existingTransaction.accountId },
+            data: { balance: { increment: transactionData.amount } },
+          });
+        } else if (existingTransaction.type === TransactionType.EXPENSE) {
+          await tx.account.update({
+            where: { id: existingTransaction.accountId },
+            data: { balance: { decrement: transactionData.amount } },
+          });
+        }
 
         return tr;
       });
 
-      return {
-        message: 'Transaction has been successfully updated',
-        transaction: updated,
-        status: 'success',
-        statusCode: 200,
-      };
+      return buildSuccessResponse(
+        updated,
+        'Transaction has been successfully updated',
+        HttpStatus.OK,
+        '/transactions/update',
+      );
     } catch (error) {
-      console.log(error);
-      throw error;
+      if (error instanceof ApiErrorException) throw error;
+
+      handlePrismaError(error, {
+        badRequestCode: ErrorCode.VALIDATION_ERROR,
+        badRequestMessage: 'Invalid related record',
+        notFoundCode: ErrorCode.TRANSACTION_NOT_FOUND,
+        notFoundMessage: 'Transaction not found',
+        defaultMessage: 'Failed to update transaction',
+      });
     }
   }
 
   async deleteTransaction(userId: number, transactionId: number) {
     try {
+      const validUserId = validateRequiredId(
+        userId,
+        'user ID',
+        ErrorCode.INVALID_USER_ID,
+      );
+
+      const validTransactionId = validateRequiredId(
+        transactionId,
+        'transaction ID',
+        ErrorCode.VALIDATION_ERROR,
+      );
+
       const existingTransaction = await this.database.transaction.findUnique({
         where: {
-          id: transactionId,
+          id: validTransactionId,
         },
       });
 
       if (!existingTransaction) {
-        throw new BadRequestException('Transaction not found');
+        throw new ApiErrorException(
+          'Transaction not found',
+          ErrorCode.TRANSACTION_NOT_FOUND,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
-      if (existingTransaction.userId !== userId) {
-        throw new BadRequestException(
-          'You do not have permission to delete this transaction'
+      if (existingTransaction.userId !== validUserId) {
+        throw new ApiErrorException(
+          'You do not have an access to this record',
+          ErrorCode.UNAUTHORIZED,
+          HttpStatus.UNAUTHORIZED,
         );
       }
 
@@ -183,111 +255,174 @@ export class TransactionsService {
           });
         }
 
-        const tr = await tx.transaction.delete({
-          where: { id: transactionId },
-          select: {
-            id: true,
-            accountId: true,
-            userId: true,
-            categoryId: true,
-            amount: true,
-            currency: true,
-            description: true,
-            date: true,
-            type: true,
-          },
+        await tx.transaction.delete({
+          where: { id: validTransactionId },
         });
 
-        return tr;
+        return validTransactionId;
       });
 
-      return {
-        message: 'Transaction has been successfully deleted',
-        transaction: deleted,
-        status: 'success',
-        statusCode: 200,
-      };
+      return buildSuccessResponse(
+        deleted,
+        'Transaction has been successfully deleted',
+        HttpStatus.OK,
+        `/transactions/delete/${transactionId}`,
+      );
     } catch (error) {
-      console.log(error);
-      throw error;
+      if (error instanceof ApiErrorException) throw error;
+
+      handlePrismaError(error, {
+        badRequestCode: ErrorCode.VALIDATION_ERROR,
+        badRequestMessage: 'Invalid related record',
+        notFoundCode: ErrorCode.TRANSACTION_NOT_FOUND,
+        notFoundMessage: 'Transaction not found',
+        defaultMessage: 'Failed to delete transaction',
+      });
     }
   }
 
-  async getUserTransactionsById(userId: number) {
+  async getAllTransactionsByUserId(userId: number) {
+    const validUserId = validateRequiredId(
+      userId,
+      'user ID',
+      ErrorCode.INVALID_USER_ID,
+    );
+
     try {
       const userTransactions = await this.database.transaction.findMany({
         where: {
-          userId: userId,
+          userId: validUserId,
         },
         select: {
           id: true,
           accountId: true,
+          account: {
+            select: {
+              balance: true,
+            },
+          },
           userId: true,
           groupId: true,
           categoryId: true,
+          category: {
+            select: {
+              name: true,
+            },
+          },
           amount: true,
           currency: true,
           description: true,
           date: true,
           type: true,
           accountRecipientId: true,
+          createdAt: true,
+          updatedAt: true,
         },
       });
-      return userTransactions;
-    } catch (error) {
-      throw new Error(
-        `Failed to fetch transactions: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
+      return buildSuccessResponse(
+        userTransactions,
+        `All transactions list for user ID ${validUserId}`,
+        HttpStatus.OK,
+        '/transactions/all',
       );
+    } catch (error) {
+      if (error instanceof ApiErrorException) throw error;
+
+      handlePrismaError(error, {
+        notFoundCode: ErrorCode.TRANSACTIONS_NOT_FOUND,
+        notFoundMessage: 'Transactions not found',
+        defaultMessage: 'Failed to fetch transactions list',
+      });
     }
   }
 
   async createTransfer(transferData: CreateTransferDataDto, userId: number) {
     try {
       validateTransfer(transferData, userId);
+
+      const validUserId = validateRequiredId(
+        userId,
+        'user ID',
+        ErrorCode.INVALID_USER_ID,
+      );
+
       const created = await this.database.$transaction(async (tx) => {
         const sourceAccount = await tx.account.findUnique({
           where: { id: transferData.accountId },
-          select: { id: true, balance: true, ownerId: true },
+          select: { id: true, balance: true, ownerId: true, currency: true },
         });
 
         if (!sourceAccount) {
           this.logger.warn('Source account not found');
-          throw new BadRequestException('Source account not found');
+          throw new ApiErrorException(
+            'Source account not found',
+            ErrorCode.ACCOUNT_NOT_FOUND,
+            HttpStatus.NOT_FOUND,
+          );
         }
 
-        if (sourceAccount.ownerId !== userId) {
+        if (sourceAccount.ownerId !== validUserId) {
           this.logger.warn('User does not have access to this account');
-          throw new BadRequestException(
-            'You do not have permission to transfer from this account'
+          throw new ApiErrorException(
+            'You do not have permission to transfer from this account',
+            ErrorCode.UNAUTHORIZED,
+            HttpStatus.UNAUTHORIZED,
           );
         }
 
         if (sourceAccount.balance.toNumber() < transferData.amount) {
           this.logger.warn('Insufficient balance');
-          throw new BadRequestException('Insufficient balance');
+          throw new ApiErrorException(
+            'Insufficient balance',
+            ErrorCode.VALIDATION_ERROR,
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         const destinationAccount = await tx.account.findUnique({
           where: { id: transferData.accountRecipientId },
-          select: { id: true },
+          select: { id: true, ownerId: true, currency: true },
         });
 
         if (!destinationAccount) {
           this.logger.warn('Destination account not found');
-          throw new BadRequestException('Destination account not found');
+          throw new ApiErrorException(
+            'Destination account not found',
+            ErrorCode.ACCOUNT_NOT_FOUND,
+            HttpStatus.NOT_FOUND,
+          );
         }
+
+        if (destinationAccount.ownerId !== validUserId) {
+          this.logger.warn('User does not have access to destination account');
+          throw new ApiErrorException(
+            'You do not have permission to transfer to this account',
+            ErrorCode.UNAUTHORIZED,
+            HttpStatus.UNAUTHORIZED,
+          );
+        }
+
+        const { data } = await this.exchangeRateService.getRates();
+        const { rates } = data;
+        const sourceCurrency = sourceAccount.currency as CurrencyType;
+        const destinationCurrency = destinationAccount.currency as CurrencyType;
+
+        const amountToCredit = await this.exchangeRateService.convertAmount(
+          transferData.amount,
+          sourceCurrency,
+          destinationCurrency,
+          rates,
+        );
 
         const transfer = await tx.transaction.create({
           data: {
             accountId: transferData.accountId,
             accountRecipientId: transferData.accountRecipientId,
-            userId: userId,
+            userId: validUserId,
             groupId: transferData.groupId,
             categoryId: transferData.categoryId,
             amount: transferData.amount,
-            currency: transferData.currency,
+            currency: sourceCurrency,
             description: transferData.description,
             date: transferData.date ?? new Date().toISOString(),
             type: TransactionType.TRANSFER,
@@ -304,6 +439,7 @@ export class TransactionsService {
             description: true,
             date: true,
             type: true,
+            createdAt: true,
           },
         });
 
@@ -314,25 +450,28 @@ export class TransactionsService {
 
         await tx.account.update({
           where: { id: transferData.accountRecipientId },
-          data: { balance: { increment: transferData.amount } },
+          data: { balance: { increment: amountToCredit } },
         });
 
         return transfer;
       });
 
-      return {
-        message: 'Transfer has been successfully created',
-        transfer: created,
-        status: 'success',
-        statusCode: 201,
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      this.logger.error(
-        'Failed to create transfer',
-        error instanceof Error ? error.stack : String(error)
+      return buildSuccessResponse(
+        created,
+        `Transfer successfully created`,
+        HttpStatus.CREATED,
+        '/transactions/transfer',
       );
-      throw new BadRequestException('Failed to create transfer');
+    } catch (error) {
+      if (error instanceof ApiErrorException) throw error;
+
+      handlePrismaError(error, {
+        badRequestCode: ErrorCode.VALIDATION_ERROR,
+        badRequestMessage: 'Invalid transfer data',
+        notFoundCode: ErrorCode.ACCOUNT_NOT_FOUND,
+        notFoundMessage: 'Account not found',
+        defaultMessage: 'Failed to create new transfer',
+      });
     }
   }
 }

@@ -1,11 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import cookieParser from 'cookie-parser';
-import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ApiHttpExceptionFilter } from './common/filters/api-http-exception.filter.js';
+import { buildGlobalValidationPipe } from './common/pipes/global-validation.pipe.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const port = process.env.PORT || 3000;
+  const nodeEnv = process.env.NODE_ENV || 'development';
 
   const config = new DocumentBuilder()
     .setTitle('Family Finance API')
@@ -21,7 +24,7 @@ async function bootstrap() {
           'To get an access token it is necessary to pass the authentification through /auth/signup endpoint',
         in: 'header',
       },
-      'accessToken'
+      'accessToken',
     )
 
     .build();
@@ -33,16 +36,10 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // removes properties that are not present in DTO
-      forbidNonWhitelisted: false, // DOES NOT throw error for excess fields
-      transform: true, // automatically transforms types
-    })
-  );
+  app.useGlobalPipes(buildGlobalValidationPipe());
 
-  const port = process.env.PORT || 3000;
-  const nodeEnv = process.env.NODE_ENV || 'development';
+  app.useGlobalFilters(new ApiHttpExceptionFilter());
+
   await app.listen(port);
 
   console.log(`Family Finance Backend`);

@@ -4,6 +4,7 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { AccountsModule } from './modules/accounts/accounts.module.js';
 import { TransactionsModule } from './modules/transactions/transactions.module.js';
+import { CurrencyModule } from './modules/currency/currency.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { CategoriesModule } from './modules/categories/categories.module.js';
 import { UserModule } from './modules/user/user.module.js';
@@ -11,13 +12,16 @@ import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { TerminusModule } from '@nestjs/terminus';
 import { RedisHealthModule } from '@songkeys/nestjs-redis-health';
 import { HealthModule } from './modules/health/health.module.js';
+import { JwtConfigModule } from './common/jwt/jwt.module.js';
 
 @Module({
   imports: [
     DatabaseModule,
+    JwtConfigModule,
     AuthModule,
     AccountsModule,
     TransactionsModule,
+    CurrencyModule,
     CategoriesModule,
     UserModule,
     MetricsModule,

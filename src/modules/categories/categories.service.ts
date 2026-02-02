@@ -1,17 +1,17 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service.js';
+import {
+  ApiErrorException,
+  ErrorCode,
+} from '../../common/exceptions/api-error.exception.js';
+import { buildSuccessResponse } from '../../common/utils/response.js';
+import { handlePrismaError } from '../../common/utils/prisma-error.js';
 
 @Injectable()
 export class CategoriesService {
   constructor(private database: DatabaseService) {}
 
-  async getAllCategories(userId: number) {
-    if (!userId || isNaN(userId))
-      throw new BadRequestException('userId is required');
+  async getAllCategories() {
     try {
       const categories = await this.database.category.findMany({
         select: {
@@ -23,18 +23,20 @@ export class CategoriesService {
         },
       });
 
-      return {
-        data: categories,
-        status: 'success',
-        statusCode: 200,
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new Error(
-        `Failed to fetch categories: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
+      return buildSuccessResponse(
+        categories,
+        'Categories list',
+        HttpStatus.OK,
+        '/categories',
       );
+    } catch (error) {
+      if (error instanceof ApiErrorException) throw error;
+
+      handlePrismaError(error, {
+        notFoundCode: ErrorCode.CATEGORIES_NOT_FOUND,
+        notFoundMessage: 'Categories not found',
+        defaultMessage: 'Failed to fetch categories list',
+      });
     }
   }
 }

@@ -8,8 +8,7 @@ import {
   Param,
   Res,
   Logger,
-  UnauthorizedException,
-  BadRequestException,
+  HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -22,12 +21,13 @@ import {
 } from './dto/update.dto.js';
 import { UserService } from './user.service.js';
 import { setCookie } from '../../common/utils/setCookie.js';
-import { ApiErrorException } from '../../common/exceptions/api-error.exception.js';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { buildSuccessResponse } from '../../common/utils/response.js';
+import type { StringValue } from 'ms';
 
 @ApiUnauthorizedResponse({
   description: 'Unauthorized - Invalid or missing JWT token',
@@ -37,7 +37,7 @@ export class UserController {
   private readonly logger = new Logger(UserController.name);
   constructor(
     private userService: UserService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
   ) {}
 
   @Put('profile')
@@ -49,22 +49,9 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async updateUserProfile(
     @Body() userData: UpdateUserProfileDto,
-    @CurrentUser() user: { sub: number }
+    @CurrentUser() user: { sub: number },
   ) {
-    try {
-      return await this.userService.updateUserProfile(user.sub, userData);
-    } catch (error) {
-      const errMsg =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'string'
-          ? error
-          : JSON.stringify(error);
-      this.logger.error(
-        `Failed to update profile for user ${user.sub}: ${errMsg}`
-      );
-      throw error;
-    }
+    return await this.userService.updateUserProfile(user.sub, userData);
   }
 
   @Put('password')
@@ -78,50 +65,49 @@ export class UserController {
   async updateUserPassword(
     @Body() passwordData: UpdateUserPasswordDto,
     @Res({ passthrough: true }) res: Response,
-    @CurrentUser() user: { sub: number }
+    @CurrentUser() user: { sub: number },
   ) {
-    try {
-      const result = await this.userService.updateUserPassword(
-        user.sub,
-        passwordData
-      );
+    const result = await this.userService.updateUserPassword(
+      user.sub,
+      passwordData,
+    );
 
-      const payload = { sub: result.data.id, email: result.data.email };
-      const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-      const refreshToken = this.jwtService.sign(payload, {
-        expiresIn: '7d',
-      });
+    const payload = { sub: result.data.id, email: result.data.email };
+    const accessToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('15m'),
+    );
+    const refreshToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('7d'),
+    );
 
-      setCookie(res as Response, 'refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      });
+    setCookie(res as Response, 'refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
 
-      return {
-        ...result,
+    setCookie(res as Response, 'access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 15,
+    });
+
+    return buildSuccessResponse(
+      {
+        data: result.data,
         accessToken,
-      };
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof UnauthorizedException
-      ) {
-        throw error;
-      }
-
-      const errMsg =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'string'
-          ? error
-          : JSON.stringify(error);
-
-      this.logger.error(`Error while updating password: ${errMsg}`);
-      throw new BadRequestException('Failed to update password');
-    }
+        refreshIssued: true,
+      },
+      'Password changed',
+      HttpStatus.OK,
+      '/user/password',
+    );
   }
 
   @Put('email')
@@ -135,41 +121,56 @@ export class UserController {
   async updateUserEmail(
     @Body() email: UpdateUserEmailDto,
     @Res({ passthrough: true }) res: Response,
-    @CurrentUser() user: { sub: number }
+    @CurrentUser() user: { sub: number },
   ) {
-    try {
-      const result = await this.userService.updateUserEmail(user.sub, email);
+    const result = await this.userService.updateUserEmail(user.sub, email);
 
-      const payload = { sub: result.data.id, email: result.data.email };
-      const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-      const refreshToken = this.jwtService.sign(payload, {
-        expiresIn: '7d',
-      });
+    const payload = { sub: result.data.id, email: result.data.email };
+    const accessToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('15m'),
+    );
+    const refreshToken = this.jwtService.sign(
+      payload,
+      this.buildSignOptions('7d'),
+    );
 
-      setCookie(res as Response, 'refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      });
+    setCookie(res as Response, 'refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
 
-      return { ...result, accessToken };
-    } catch (error) {
-      if (error instanceof ApiErrorException) {
-        this.logger.warn(`Email update failed`);
-        throw error;
-      }
+    setCookie(res as Response, 'access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 1000 * 60 * 15,
+    });
 
-      if (
-        error instanceof BadRequestException ||
-        error instanceof UnauthorizedException
-      ) {
-        throw error;
-      }
+    return buildSuccessResponse(
+      {
+        data: result.data,
+        accessToken,
+        refreshIssued: true,
+      },
+      'Email changed',
+      HttpStatus.OK,
+      '/user/email',
+    );
+  }
 
-      this.logger.error(`Unexpected error updating email`);
-      throw new BadRequestException('Failed to update email');
-    }
+  private buildSignOptions(expiresIn: StringValue) {
+    const issuer = process.env.JWT_ISSUER;
+    const audience = process.env.JWT_AUDIENCE;
+
+    return {
+      expiresIn,
+      ...(issuer ? { issuer } : {}),
+      ...(audience ? { audience } : {}),
+    };
   }
 }

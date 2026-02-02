@@ -39,7 +39,7 @@ export class AccountsController {
   @UseGuards(JwtAuthGuard)
   async createAccount(
     @Body() createAccountDto: CreateAccountDto,
-    @CurrentUser() user: { sub: number; email: string }
+    @CurrentUser() user: { sub: number; email: string },
   ) {
     const accountData = {
       ...createAccountDto,
@@ -60,26 +60,6 @@ export class AccountsController {
     return this.accountsService.getUserAccountsById(user.sub);
   }
 
-  @Get('user/:userId')
-  @ApiOperation({
-    summary: 'Get user accounts by ID',
-    description:
-      'Returns accounts for a specific user. Users can only access their own accounts.',
-  })
-  @ApiBearerAuth('accessToken')
-  @UseGuards(JwtAuthGuard)
-  async getUserAccounts(
-    @Param('userId') userId: string,
-    @CurrentUser() user: { sub: number; email: string }
-  ) {
-    const userIdNumber = parseInt(userId, 10);
-    if (userIdNumber !== user.sub) {
-      throw new UnauthorizedException('You can only access your own accounts');
-    }
-
-    return this.accountsService.getUserAccountsById(userIdNumber);
-  }
-
   @Put(':accountId')
   @ApiOperation({
     summary: 'Update account',
@@ -91,12 +71,12 @@ export class AccountsController {
   async updateAccountById(
     @Body() accountData: UpdateAccountDto,
     @Param('accountId') accountId: number,
-    @CurrentUser() user: { sub: number; email: string }
+    @CurrentUser() user: { sub: number; email: string },
   ) {
     return this.accountsService.updateAccountById(
       accountId,
       user.sub,
-      accountData
+      accountData,
     );
   }
 
@@ -111,7 +91,7 @@ export class AccountsController {
   @HttpCode(200)
   async deleteAccount(
     @Param('accountId') accountId: number,
-    @CurrentUser() user: { sub: number; email: string }
+    @CurrentUser() user: { sub: number; email: string },
   ) {
     return this.accountsService.deleteAccountById(accountId, user.sub);
   }

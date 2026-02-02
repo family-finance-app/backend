@@ -423,6 +423,12 @@ const transferCategories: SeedCategory[] = [
     icon: 'ri-arrow-left-right-line',
     color: '#37426fff',
   },
+  {
+    name: 'Savings',
+    type: TransactionType.TRANSFER,
+    icon: 'ri-coin-line',
+    color: '#2a460dff',
+  },
 ];
 
 async function upsertCategories(categories: SeedCategory[]) {

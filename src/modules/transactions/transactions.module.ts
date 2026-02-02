@@ -1,15 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TransactionsController } from './transactions.controller.js';
 import { TransactionsService } from './transactions.service.js';
-import { JwtModule } from '@nestjs/jwt';
+import { CurrencyModule } from '../currency/currency.module.js';
 
 @Module({
-  imports: [
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'fallback-secret-key',
-      signOptions: { expiresIn: '1h' },
-    }),
-  ],
+  imports: [CurrencyModule],
   controllers: [TransactionsController],
   providers: [TransactionsService],
   exports: [TransactionsService],
