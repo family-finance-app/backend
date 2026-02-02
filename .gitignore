@@ -99,7 +99,8 @@ public
 
 # Docker
 Dockerfile.prod
-docker-compose.override.yml
+docker-compose.override.ymlß
+docker-compose.local.yml
 npm-debug.log*
 .vscode/
 .idea/
