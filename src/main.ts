@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const port = process.env.PORT || 3000;
   const nodeEnv = process.env.NODE_ENV || 'development';
-  const FRONTEND_URL = process.env.FRONTEND_URL;
+  const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3500';
 
   const config = new DocumentBuilder()
     .setTitle('Family Finance API')
