@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import type { StringValue } from 'ms';
 
 const jwtSecret = process.env.JWT_SECRET?.trim();
+
 if (!jwtSecret) {
   throw new Error('JWT_SECRET is required and must be non-empty');
 }
