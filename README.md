@@ -11,7 +11,7 @@ Monolithic NestJS backend for the Family Finance platform. The service exposes a
 
 ### High-level topology
 
-Clients (web/mobile) can talk directly to the backend in local setups, or through the API gateway in production-style deployments.
+Clients can talk directly to the backend in local setups, or through the API gateway in production-style deployments.
 
 ```
 Clients
