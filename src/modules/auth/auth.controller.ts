@@ -27,7 +27,6 @@ import {
   ApiErrorException,
   ErrorCode,
 } from '../../common/exceptions/api-error.exception.js';
-import { Throttle } from '@nestjs/throttler';
 import type { StringValue } from 'ms';
 
 @Controller('auth')
