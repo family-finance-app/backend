@@ -2,8 +2,8 @@ name: CD-Dev
 on:
   workflow_dispatch:
     inputs:
-      runKics:
-        description: Run KICS scan
+      runTrivy:
+        description: Run Trivy scan
         type: boolean
         default: false
         required: false
@@ -77,10 +77,10 @@ jobs:
       release_version: ${{ env.release_version }}
 
   scan:
-    name: Checkmarx KICS
+    name: Trivy Scan
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: inputs.runKics == true
+    if: inputs.runTrivy == true
     permissions:
       contents: read
       issues: write
@@ -97,14 +97,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Run KICS scan
-        uses: checkmarx/kics-github-action@v2
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.35.0
         with:
-          path: ${{ env.KICS_SCAN_PATH }}
-          fail_on: high
-          output_formats: "json,sarif"
-          exclude_paths: ".github/workflows/scorecard.yml"
-          exclude_queries: "555ab8f9-2001-455e-a077-f2d0f41e2fb9" # Unpinned Actions Full Length Commit SHA
+          scan-type: fs
+          scanners: vuln,secret,misconfig
+          scan-ref: ./
+          format: sarif
+          output: results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: 1
         continue-on-error: true
 
       - name: Upload to code-scanning
