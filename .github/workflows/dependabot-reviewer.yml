@@ -34,7 +34,7 @@ jobs:
           fail-on-severity: "low"
 
       - name: Fetch Dependabot metadata
-        uses: dependabot/fetch-metadata@v2
+        uses: dependabot/fetch-metadata@v3
         with:
           alert-lookup: true
           compat-lookup: true
